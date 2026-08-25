@@ -1,0 +1,30 @@
+# Java / Maven
+target/
+*.iws
+*.iml
+*.ipr
+
+# IDE
+.idea/
+.vscode/
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+# Node
+node_modules/
+dist/
+dist-ssr/
+*.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS
+.DS_Store
+Thumbs.db
+*.tsbuildinfo
