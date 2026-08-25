@@ -1,55 +1,74 @@
+/*
+ * Tema medieval: pergaminho, tinta ferrogalica e rubrica vermelha.
+ *
+ * A paleta clara imita velino sobre uma mesa de madeira; a escura, um scriptorium
+ * a luz de vela, com dourado no lugar do brilho. A cor do evento nao mora aqui: ela
+ * chega em hex pela variavel --chip, escolhida na roda de cores.
+ */
+
 :root {
-  --bg: #f7f8fa;
-  --surface: #ffffff;
-  --surface-muted: #f1f3f6;
-  --border: #e2e5ea;
-  --border-strong: #cbd0d8;
-  --text: #1a1d23;
-  --text-muted: #6b7280;
-  --text-faint: #9aa1ac;
-  --accent: #2f6fed;
-  --accent-soft: #e8f0fe;
-  --danger: #d64545;
-  --today: #fdf2e3;
+  /* pergaminho */
+  --bg: #c9b18a;
+  --surface: #f4e8cf;
+  --surface-muted: #e8d8b6;
+  --border: #c3aa80;
+  --border-strong: #8d7048;
+  --text: #2f2117;
+  --text-muted: #6d5740;
+  --text-faint: #9a8460;
+  --accent: #8f2f1d;
+  --accent-soft: #efdcc2;
+  --danger: #7e2015;
+  --today: #f0d9a4;
+  --gold: #a8842c;
+  --seal: #8f2f1d;
 
-  --event-blue: #2f6fed;
-  --event-green: #1f9254;
-  --event-amber: #c97a09;
-  --event-red: #d64545;
-  --event-violet: #7c4dcc;
-  --event-teal: #0f8b8d;
+  --font-body: 'EB Garamond', Georgia, 'Times New Roman', serif;
+  --font-display: 'Cinzel', Georgia, serif;
+  --font-brand: 'UnifrakturMaguntia', 'Cinzel', Georgia, serif;
 
-  --radius: 10px;
-  --radius-sm: 6px;
-  --shadow: 0 1px 2px rgb(16 24 40 / 6%), 0 8px 24px rgb(16 24 40 / 8%);
+  /* cantos quase retos: a pagina e cortada, nao arredondada */
+  --radius: 3px;
+  --radius-sm: 2px;
+  --shadow: 0 2px 4px rgb(47 33 23 / 18%), 0 10px 30px rgb(47 33 23 / 22%);
 
-  --hour-height: 48px;
-  --time-gutter: 60px;
+  /* granulado do velino, aplicado por cima das superficies */
+  --vellum: repeating-linear-gradient(
+      92deg,
+      rgb(120 85 45 / 3.5%) 0 2px,
+      transparent 2px 5px
+    ),
+    repeating-linear-gradient(2deg, rgb(120 85 45 / 2.5%) 0 3px, transparent 3px 7px);
+
+  --hour-height: 52px;
+  --time-gutter: 66px;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #14161a;
-    --surface: #1c1f25;
-    --surface-muted: #22262d;
-    --border: #2c313a;
-    --border-strong: #3a4049;
-    --text: #e8eaed;
-    --text-muted: #9aa1ac;
-    --text-faint: #6b7280;
-    --accent: #6c9bff;
-    --accent-soft: #23304d;
-    --danger: #f07171;
-    --today: #33291a;
+    --bg: #16110b;
+    --surface: #241b12;
+    --surface-muted: #2e2418;
+    --border: #3f3222;
+    --border-strong: #5f4b32;
+    --text: #ecdcb6;
+    --text-muted: #ad9670;
+    --text-faint: #7b6849;
+    --accent: #c98a3c;
+    --accent-soft: #3a2a16;
+    --danger: #cd5f4b;
+    --today: #35270f;
+    --gold: #c9a227;
+    --seal: #8f2f1d;
 
-    --event-blue: #6c9bff;
-    --event-green: #4cc38a;
-    --event-amber: #e0a458;
-    --event-red: #f07171;
-    --event-violet: #a78bfa;
-    --event-teal: #4dd0c1;
+    --shadow: 0 2px 4px rgb(0 0 0 / 45%), 0 10px 30px rgb(0 0 0 / 55%);
 
-    --shadow: 0 1px 2px rgb(0 0 0 / 30%), 0 8px 24px rgb(0 0 0 / 40%);
+    --vellum: repeating-linear-gradient(
+        92deg,
+        rgb(255 220 160 / 2%) 0 2px,
+        transparent 2px 5px
+      ),
+      repeating-linear-gradient(2deg, rgb(255 220 160 / 1.5%) 0 3px, transparent 3px 7px);
   }
 }
 
@@ -65,10 +84,13 @@ body,
 }
 
 body {
-  background: var(--bg);
+  background-color: var(--bg);
+  /* manchas irregulares, como couro gasto sob a pagina */
+  background-image: radial-gradient(ellipse at 18% 24%, rgb(0 0 0 / 6%) 0%, transparent 55%),
+    radial-gradient(ellipse at 82% 76%, rgb(0 0 0 / 7%) 0%, transparent 52%);
   color: var(--text);
-  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  font-size: 14px;
+  font-family: var(--font-body);
+  font-size: 16px;
   line-height: 1.45;
   -webkit-font-smoothing: antialiased;
 }
@@ -77,6 +99,12 @@ button {
   font: inherit;
   color: inherit;
   cursor: pointer;
+}
+
+/* barras de rolagem em tom de madeira */
+* {
+  scrollbar-color: var(--border-strong) transparent;
+  scrollbar-width: thin;
 }
 
 /* ------------------------------------------------------------------ layout */
@@ -93,24 +121,40 @@ button {
   gap: 12px;
   flex-wrap: wrap;
   padding: 12px 16px;
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
+  background-color: var(--surface);
+  background-image: var(--vellum);
+  /* fio duplo, como a moldura de um folio */
+  border-bottom: 3px double var(--border-strong);
 }
 
 .toolbar__brand {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-weight: 650;
-  font-size: 15px;
-  letter-spacing: -0.01em;
+  font-family: var(--font-brand);
+  font-size: 24px;
+  font-weight: 400;
+  line-height: 1;
+  color: var(--accent);
+  letter-spacing: 0.02em;
+}
+
+/* A imagem chega em 80px e desce para 28: sobra resolucao em tela retina.
+   O drop-shadow assenta o anel no pergaminho em vez de deixa-lo flutuando. */
+.toolbar__brand-mark {
+  width: 28px;
+  height: 28px;
+  flex: none;
+  object-fit: contain;
+  filter: drop-shadow(0 1px 1px rgb(47 33 23 / 45%));
 }
 
 .toolbar__title {
+  font-family: var(--font-display);
   font-size: 17px;
   font-weight: 600;
-  letter-spacing: -0.01em;
-  min-width: 200px;
+  letter-spacing: 0.03em;
+  min-width: 210px;
 }
 
 .toolbar__spacer {
@@ -128,33 +172,45 @@ button {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  padding: 6px 12px;
+  padding: 6px 14px;
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-sm);
-  background: var(--surface);
-  transition: background 0.12s ease, border-color 0.12s ease;
+  background-color: var(--surface-muted);
+  background-image: var(--vellum);
+  font-family: var(--font-display);
+  font-size: 13px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  /* leve relevo, como placa gravada */
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 22%), 0 1px 1px rgb(47 33 23 / 12%);
+  transition: background-color 0.12s ease, border-color 0.12s ease;
 }
 
 .btn:hover {
-  background: var(--surface-muted);
+  background-color: var(--accent-soft);
+  border-color: var(--gold);
 }
 
 .btn--icon {
-  padding: 6px 9px;
-  font-size: 15px;
+  padding: 5px 11px;
+  font-size: 16px;
   line-height: 1;
 }
 
 .btn--primary {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: #fff;
-  font-weight: 550;
+  /* selo de cera */
+  background-color: var(--seal);
+  background-image: none;
+  border-color: #4d1a10;
+  color: #f4e8cf;
+  font-weight: 600;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 18%), 0 1px 2px rgb(0 0 0 / 30%);
 }
 
 .btn--primary:hover {
-  filter: brightness(1.08);
-  background: var(--accent);
+  filter: brightness(1.15);
+  background-color: var(--seal);
+  border-color: var(--gold);
 }
 
 .btn--danger {
@@ -164,11 +220,16 @@ button {
 
 .btn--ghost {
   border-color: transparent;
-  background: transparent;
+  background-color: transparent;
+  background-image: none;
+  box-shadow: none;
+  text-transform: none;
+  letter-spacing: 0;
 }
 
 .btn--ghost:hover {
-  background: var(--surface-muted);
+  background-color: var(--surface-muted);
+  border-color: transparent;
 }
 
 .segmented {
@@ -179,10 +240,15 @@ button {
 }
 
 .segmented button {
-  padding: 6px 12px;
+  padding: 6px 14px;
   border: 0;
-  background: var(--surface);
-  border-right: 1px solid var(--border);
+  background-color: var(--surface-muted);
+  background-image: var(--vellum);
+  font-family: var(--font-display);
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border-right: 1px solid var(--border-strong);
 }
 
 .segmented button:last-child {
@@ -190,8 +256,9 @@ button {
 }
 
 .segmented button[aria-pressed='true'] {
-  background: var(--accent-soft);
-  color: var(--accent);
+  background-color: var(--seal);
+  background-image: none;
+  color: #f4e8cf;
   font-weight: 600;
 }
 
@@ -203,12 +270,13 @@ button {
 
 .status-bar {
   padding: 8px 16px;
-  font-size: 13px;
-  border-bottom: 1px solid var(--border);
+  font-size: 14px;
+  font-style: italic;
+  border-bottom: 1px solid var(--border-strong);
 }
 
 .status-bar--error {
-  background: color-mix(in srgb, var(--danger) 12%, var(--surface));
+  background: color-mix(in srgb, var(--danger) 14%, var(--surface));
   color: var(--danger);
 }
 
@@ -224,9 +292,12 @@ button {
   grid-template-rows: auto repeat(6, minmax(96px, 1fr));
   height: 100%;
   min-height: 620px;
-  background: var(--surface);
-  border: 1px solid var(--border);
+  background-color: var(--surface);
+  background-image: var(--vellum);
+  border: 1px solid var(--border-strong);
   border-radius: var(--radius);
+  /* fio interno dourado, como a pauta de um manuscrito */
+  box-shadow: inset 0 0 0 1px var(--surface), inset 0 0 0 2px color-mix(in srgb, var(--gold) 45%, transparent), var(--shadow);
   overflow: hidden;
 }
 
@@ -237,18 +308,19 @@ button {
 }
 
 .month__weekdays {
-  border-bottom: 1px solid var(--border);
-  background: var(--surface-muted);
+  border-bottom: 3px double var(--border-strong);
+  background: color-mix(in srgb, var(--surface-muted) 80%, transparent);
 }
 
 .month__weekday {
   padding: 8px;
   text-align: center;
+  font-family: var(--font-display);
   font-size: 12px;
   font-weight: 600;
   color: var(--text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.1em;
 }
 
 .month__row {
@@ -280,29 +352,33 @@ button {
 }
 
 .day-cell:hover {
-  background: var(--surface-muted);
+  background: color-mix(in srgb, var(--gold) 10%, transparent);
 }
 
 .day-cell--outside {
   color: var(--text-faint);
-  background: color-mix(in srgb, var(--surface-muted) 55%, transparent);
+  background: color-mix(in srgb, var(--bg) 22%, transparent);
 }
 
 .day-cell__number {
   align-self: flex-start;
-  font-size: 12px;
+  font-family: var(--font-display);
+  font-size: 13px;
   font-weight: 600;
-  padding: 2px 6px;
+  padding: 1px 7px;
   border-radius: 999px;
 }
 
 .day-cell--today .day-cell__number {
-  background: var(--accent);
-  color: #fff;
+  /* selo de cera sobre o dia corrente */
+  background: var(--seal);
+  color: #f4e8cf;
+  box-shadow: 0 0 0 1px var(--gold);
 }
 
 .day-cell__more {
-  font-size: 11px;
+  font-size: 12px;
+  font-style: italic;
   color: var(--text-muted);
   padding-left: 4px;
 }
@@ -312,14 +388,15 @@ button {
 .chip {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
   width: 100%;
-  padding: 2px 6px;
+  padding: 1px 6px;
   border: 0;
+  border-left: 2px solid var(--chip);
   border-radius: var(--radius-sm);
-  background: color-mix(in srgb, var(--chip) 14%, transparent);
+  background: color-mix(in srgb, var(--chip) 15%, transparent);
   color: var(--text);
-  font-size: 12px;
+  font-size: 13px;
   text-align: left;
   overflow: hidden;
   white-space: nowrap;
@@ -327,14 +404,16 @@ button {
 }
 
 .chip:hover {
-  background: color-mix(in srgb, var(--chip) 26%, transparent);
+  background: color-mix(in srgb, var(--chip) 28%, transparent);
 }
 
 .chip__dot {
   flex: none;
   width: 6px;
   height: 6px;
-  border-radius: 50%;
+  /* losango, como a peca heraldica */
+  border-radius: 1px;
+  transform: rotate(45deg);
   background: var(--chip);
 }
 
@@ -351,23 +430,26 @@ button {
 
 .chip__repeat {
   flex: none;
-  color: var(--text-faint);
-  font-size: 10px;
+  color: var(--gold);
+  font-size: 11px;
 }
 
 /* ------------------------------------------------------- visao de semana */
 
 .timegrid {
-  background: var(--surface);
-  border: 1px solid var(--border);
+  background-color: var(--surface);
+  background-image: var(--vellum);
+  border: 1px solid var(--border-strong);
   border-radius: var(--radius);
+  box-shadow: inset 0 0 0 1px var(--surface), inset 0 0 0 2px color-mix(in srgb, var(--gold) 45%, transparent), var(--shadow);
   overflow: hidden;
 }
 
 .timegrid__header {
   display: grid;
-  border-bottom: 1px solid var(--border);
-  background: var(--surface-muted);
+  border-bottom: 3px double var(--border-strong);
+  background-color: var(--surface-muted);
+  background-image: var(--vellum);
   position: sticky;
   top: 0;
   z-index: 2;
@@ -388,39 +470,45 @@ button {
 }
 
 .timegrid__dayname {
+  font-family: var(--font-display);
   font-size: 11px;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.1em;
   color: var(--text-muted);
 }
 
 .timegrid__daynumber {
-  font-size: 18px;
+  font-family: var(--font-display);
+  font-size: 19px;
   font-weight: 600;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 30px;
-  height: 30px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
 }
 
 .timegrid__daylabel--today .timegrid__daynumber {
-  background: var(--accent);
-  color: #fff;
+  background: var(--seal);
+  color: #f4e8cf;
+  box-shadow: 0 0 0 1px var(--gold);
 }
 
 .timegrid__allday {
   display: grid;
-  border-bottom: 1px solid var(--border-strong);
-  background: var(--surface);
+  border-bottom: 3px double var(--border-strong);
+  background: transparent;
   min-height: 30px;
 }
 
 .timegrid__allday-label {
   border-right: 1px solid var(--border);
   padding: 4px 6px;
-  font-size: 11px;
+  font-family: var(--font-display);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
   color: var(--text-muted);
   text-align: right;
 }
@@ -446,16 +534,17 @@ button {
 .timegrid__hourlabel {
   height: var(--hour-height);
   position: relative;
+  font-family: var(--font-display);
   font-size: 11px;
   color: var(--text-muted);
   text-align: right;
-  padding-right: 6px;
+  padding-right: 8px;
   font-variant-numeric: tabular-nums;
 }
 
 .timegrid__hourlabel span {
   position: relative;
-  top: -7px;
+  top: -8px;
 }
 
 .timegrid__column {
@@ -468,7 +557,7 @@ button {
 }
 
 .timegrid__column--today {
-  background: color-mix(in srgb, var(--today) 55%, transparent);
+  background: color-mix(in srgb, var(--today) 45%, transparent);
 }
 
 .timegrid__hourline {
@@ -481,7 +570,8 @@ button {
   left: 0;
   right: 0;
   height: 2px;
-  background: var(--danger);
+  /* rubrica: a linha vermelha que o copista tracava na margem */
+  background: var(--seal);
   z-index: 3;
   pointer-events: none;
 }
@@ -493,27 +583,28 @@ button {
   top: -3px;
   width: 8px;
   height: 8px;
-  border-radius: 50%;
-  background: var(--danger);
+  border-radius: 1px;
+  transform: rotate(45deg);
+  background: var(--seal);
 }
 
 .tg-event {
   position: absolute;
-  border: 0;
+  border: 1px solid color-mix(in srgb, var(--chip) 55%, transparent);
   border-left: 3px solid var(--chip);
   border-radius: var(--radius-sm);
-  background: color-mix(in srgb, var(--chip) 18%, var(--surface));
+  background: color-mix(in srgb, var(--chip) 20%, var(--surface));
   color: var(--text);
-  padding: 2px 5px;
+  padding: 2px 6px;
   overflow: hidden;
   text-align: left;
-  font-size: 12px;
+  font-size: 13px;
   line-height: 1.25;
   z-index: 1;
 }
 
 .tg-event:hover {
-  background: color-mix(in srgb, var(--chip) 30%, var(--surface));
+  background: color-mix(in srgb, var(--chip) 34%, var(--surface));
   z-index: 4;
 }
 
@@ -538,17 +629,25 @@ button {
 }
 
 .mini {
-  background: var(--surface);
-  border: 1px solid var(--border);
+  background-color: var(--surface);
+  background-image: var(--vellum);
+  border: 1px solid var(--border-strong);
   border-radius: var(--radius);
+  box-shadow: inset 0 0 0 1px var(--surface), inset 0 0 0 2px color-mix(in srgb, var(--gold) 35%, transparent);
   padding: 10px;
 }
 
 .mini__title {
-  font-size: 13px;
-  font-weight: 650;
-  margin-bottom: 6px;
-  padding-left: 2px;
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 8px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid color-mix(in srgb, var(--gold) 50%, transparent);
+  text-align: center;
 }
 
 .mini__grid {
@@ -558,10 +657,11 @@ button {
 }
 
 .mini__weekday {
+  font-family: var(--font-display);
   font-size: 10px;
   color: var(--text-faint);
   text-align: center;
-  padding-bottom: 2px;
+  padding-bottom: 3px;
 }
 
 .mini__day {
@@ -573,24 +673,25 @@ button {
   border: 0;
   border-radius: var(--radius-sm);
   background: transparent;
-  font-size: 11px;
+  font-size: 12px;
   color: var(--text);
   font-variant-numeric: tabular-nums;
 }
 
 .mini__day:hover {
-  background: var(--surface-muted);
+  background: color-mix(in srgb, var(--gold) 16%, transparent);
 }
 
 .mini__day--outside {
   color: var(--text-faint);
-  opacity: 0.5;
+  opacity: 0.45;
 }
 
 .mini__day--today {
-  background: var(--accent);
-  color: #fff;
+  background: var(--seal);
+  color: #f4e8cf;
   font-weight: 700;
+  box-shadow: 0 0 0 1px var(--gold);
 }
 
 .mini__dots {
@@ -603,12 +704,13 @@ button {
 .mini__dot {
   width: 3px;
   height: 3px;
-  border-radius: 50%;
+  border-radius: 1px;
+  transform: rotate(45deg);
   background: var(--chip);
 }
 
 .mini__day--today .mini__dot {
-  background: #fff;
+  background: #f4e8cf;
 }
 
 /* ------------------------------------------------------------- visao de dia */
@@ -623,7 +725,7 @@ button {
 .overlay {
   position: fixed;
   inset: 0;
-  background: rgb(16 24 40 / 45%);
+  background: rgb(22 17 11 / 62%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -636,10 +738,14 @@ button {
   max-width: 520px;
   max-height: 90vh;
   overflow: auto;
-  background: var(--surface);
-  border-radius: 12px;
+  background-color: var(--surface);
+  background-image: var(--vellum);
+  border-radius: var(--radius);
   box-shadow: var(--shadow);
-  border: 1px solid var(--border);
+  /* moldura dupla: fio grosso por fora, fio dourado por dentro */
+  border: 2px solid var(--border-strong);
+  outline: 1px solid color-mix(in srgb, var(--gold) 55%, transparent);
+  outline-offset: -6px;
 }
 
 .modal--sm {
@@ -651,29 +757,33 @@ button {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 14px 18px;
-  border-bottom: 1px solid var(--border);
+  padding: 14px 20px;
+  border-bottom: 3px double var(--border-strong);
 }
 
 .modal__title {
-  font-size: 15px;
-  font-weight: 650;
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--accent);
   margin: 0;
 }
 
 .modal__body {
-  padding: 16px 18px;
+  padding: 18px 20px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 13px;
 }
 
 .modal__footer {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 14px 18px;
-  border-top: 1px solid var(--border);
+  padding: 14px 20px;
+  border-top: 3px double var(--border-strong);
 }
 
 .modal__footer .toolbar__spacer {
@@ -681,8 +791,10 @@ button {
 }
 
 .modal__hint {
-  font-size: 12px;
+  font-size: 14px;
+  font-style: italic;
   color: var(--text-muted);
+  margin: 0;
 }
 
 /* ------------------------------------------------------------- formulario */
@@ -690,12 +802,15 @@ button {
 .field {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 5px;
 }
 
 .field__label {
-  font-size: 12px;
+  font-family: var(--font-display);
+  font-size: 11px;
   font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
   color: var(--text-muted);
 }
 
@@ -709,26 +824,63 @@ button {
   min-width: 0;
 }
 
+/* As datas empilham sozinhas; os dois horarios ficam lado a lado numa linha so.
+   O alinhamento pelo fim encosta o traco na altura dos campos, e nao dos rotulos. */
+.time-range {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.time-range > .field {
+  flex: 0 1 150px;
+}
+
+.time-range__dash {
+  padding-bottom: 8px;
+  color: var(--text-muted);
+}
+
+/* input[type='time'] entra aqui junto com os outros: sem ele o campo de hora
+   ficava com o visual cru do navegador, destoando do resto do formulario. */
 input[type='text'],
 input[type='number'],
 input[type='date'],
+input[type='time'],
 input[type='datetime-local'],
 select,
 textarea {
   width: 100%;
-  padding: 7px 9px;
+  padding: 8px 10px;
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-sm);
-  background: var(--surface);
+  background-color: color-mix(in srgb, var(--surface-muted) 60%, var(--surface));
   color: var(--text);
   font: inherit;
+  /* sulco: o campo afunda no pergaminho */
+  box-shadow: inset 0 1px 2px rgb(47 33 23 / 16%);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--text-faint);
+  font-style: italic;
+}
+
+/* o icone nativo de calendario/relogio nasce escuro; no tema noturno ele some */
+@media (prefers-color-scheme: dark) {
+  input[type='date']::-webkit-calendar-picker-indicator,
+  input[type='time']::-webkit-calendar-picker-indicator,
+  input[type='datetime-local']::-webkit-calendar-picker-indicator {
+    filter: invert(1) sepia(0.4);
+  }
 }
 
 input:focus-visible,
 select:focus-visible,
 textarea:focus-visible,
 button:focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--gold);
   outline-offset: 1px;
 }
 
@@ -740,27 +892,127 @@ textarea {
 .checkbox {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  font-size: 13px;
+  gap: 8px;
+  font-size: 15px;
+}
+
+.checkbox input[type='checkbox'] {
+  accent-color: var(--seal);
+  width: 15px;
+  height: 15px;
 }
 
 .swatches {
   display: flex;
+  flex-wrap: wrap;
   gap: 7px;
+  flex: 1 1 100%;
 }
 
 .swatch {
-  width: 26px;
-  height: 26px;
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
-  border: 2px solid transparent;
+  border: 1px solid var(--border-strong);
   background: var(--chip);
   padding: 0;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 25%);
 }
 
 .swatch[aria-pressed='true'] {
-  border-color: var(--text);
-  box-shadow: inset 0 0 0 2px var(--surface);
+  border-color: var(--gold);
+  box-shadow: 0 0 0 2px var(--surface), 0 0 0 3px var(--gold);
+}
+
+/* ------------------------------------------------------------- roda de cores */
+
+.color-picker {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+/* O fundo (matiz em conica, saturacao em radial) e montado no componente,
+   porque depende da luminosidade escolhida no momento. */
+.color-wheel {
+  position: relative;
+  width: 128px;
+  height: 128px;
+  flex: none;
+  border-radius: 50%;
+  border: 1px solid var(--border-strong);
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--gold) 55%, transparent), var(--shadow);
+  cursor: crosshair;
+  touch-action: none;
+}
+
+.color-wheel__marker {
+  position: absolute;
+  width: 15px;
+  height: 15px;
+  margin: -8px 0 0 -8px;
+  border-radius: 50%;
+  border: 2px solid #f6ecd8;
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 55%);
+  pointer-events: none;
+}
+
+.color-picker__controls {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1 1 170px;
+  min-width: 150px;
+}
+
+.color-hex {
+  font-family: var(--font-display);
+  letter-spacing: 0.08em;
+  text-transform: lowercase;
+}
+
+.color-slider {
+  width: 100%;
+  height: 20px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  appearance: none;
+  cursor: pointer;
+}
+
+.color-slider::-webkit-slider-runnable-track {
+  height: 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-strong);
+  background: var(--slider-track);
+}
+
+.color-slider::-moz-range-track {
+  height: 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-strong);
+  background: var(--slider-track);
+}
+
+.color-slider::-webkit-slider-thumb {
+  appearance: none;
+  width: 13px;
+  height: 18px;
+  margin-top: -4px;
+  border-radius: 2px;
+  border: 1px solid var(--border-strong);
+  background: var(--gold);
+}
+
+.color-slider::-moz-range-thumb {
+  width: 13px;
+  height: 18px;
+  border-radius: 2px;
+  border: 1px solid var(--border-strong);
+  background: var(--gold);
 }
 
 .chips-row {
@@ -770,42 +1022,49 @@ textarea {
 }
 
 .toggle-chip {
-  padding: 4px 10px;
+  padding: 4px 11px;
   border: 1px solid var(--border-strong);
   border-radius: 999px;
   background: var(--surface);
-  font-size: 12px;
+  font-family: var(--font-display);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
 .toggle-chip[aria-pressed='true'] {
-  background: var(--accent-soft);
-  border-color: var(--accent);
-  color: var(--accent);
+  background: var(--seal);
+  border-color: var(--gold);
+  color: #f4e8cf;
   font-weight: 600;
 }
 
 .recurrence-box {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  padding: 10px;
-  border: 1px solid var(--border);
+  gap: 11px;
+  padding: 12px;
+  border: 1px solid var(--border-strong);
   border-radius: var(--radius-sm);
-  background: var(--surface-muted);
+  background: color-mix(in srgb, var(--bg) 18%, var(--surface));
+  /* fio dourado interno, ecoando a moldura do modal */
+  outline: 1px solid color-mix(in srgb, var(--gold) 40%, transparent);
+  outline-offset: -4px;
 }
 
 .form-error {
-  padding: 8px 10px;
+  padding: 9px 11px;
+  border: 1px solid var(--danger);
   border-radius: var(--radius-sm);
-  background: color-mix(in srgb, var(--danger) 12%, var(--surface));
+  background: color-mix(in srgb, var(--danger) 14%, var(--surface));
   color: var(--danger);
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .scope-options {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 7px;
 }
 
 .scope-option {
@@ -813,30 +1072,35 @@ textarea {
   flex-direction: column;
   align-items: flex-start;
   gap: 1px;
-  padding: 9px 11px;
+  padding: 10px 12px;
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-sm);
-  background: var(--surface);
+  background-color: var(--surface);
+  background-image: var(--vellum);
   text-align: left;
   width: 100%;
 }
 
 .scope-option:hover {
-  border-color: var(--accent);
-  background: var(--accent-soft);
+  border-color: var(--gold);
+  background-color: var(--accent-soft);
 }
 
 .scope-option strong {
+  font-family: var(--font-display);
   font-size: 13px;
+  letter-spacing: 0.04em;
 }
 
 .scope-option span {
-  font-size: 12px;
+  font-size: 14px;
+  font-style: italic;
   color: var(--text-muted);
 }
 
 .empty {
   padding: 28px;
   text-align: center;
+  font-style: italic;
   color: var(--text-muted);
 }

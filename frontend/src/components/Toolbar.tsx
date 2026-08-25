@@ -1,3 +1,4 @@
+import oneRing from '../assets/one-ring.png'
 import { periodTitle } from '../lib/dates'
 import type { CalendarView } from '../types'
 
@@ -21,7 +22,8 @@ export default function Toolbar({ view, reference, onViewChange, onNavigate, onT
   return (
     <header className="toolbar">
       <div className="toolbar__brand">
-        <span aria-hidden>&#128197;</span>
+        {/* alt vazio de proposito: o nome ao lado ja diz o que e, entao a imagem e decorativa */}
+        <img className="toolbar__brand-mark" src={oneRing} alt="" width={80} height={80} />
         Calendario
       </div>
 

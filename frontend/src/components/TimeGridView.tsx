@@ -200,7 +200,7 @@ export default function TimeGridView({ days, occurrencesByDay, onSelectOccurrenc
                   height: `${placed.height}px`,
                   left: `calc(${placed.left}% + 2px)`,
                   width: `calc(${placed.width}% - 4px)`,
-                  ['--chip' as string]: `var(--event-${placed.occurrence.color})`,
+                  ['--chip' as string]: placed.occurrence.color,
                 }}
                 onClick={(event) => {
                   event.stopPropagation()

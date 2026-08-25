@@ -2,6 +2,7 @@ package org.horodenko.calendar.web.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 import java.time.LocalDateTime;
@@ -34,16 +35,22 @@ public record EventRequest(
         @Size(max = 500, message = "A regra de recorrencia deve ter no maximo 500 caracteres")
         String recurrenceRule,
 
-        @Size(max = 32, message = "A cor deve ter no maximo 32 caracteres")
+        // A cor vem da roda do cliente, entao pode ser qualquer valor. Recusar aqui o
+        // que nao for hex impede que texto arbitrario acabe dentro de uma regra CSS.
+        @Pattern(regexp = "^$|^#[0-9a-fA-F]{6}$",
+                message = "A cor deve estar no formato hexadecimal, como #8f2f1d")
         String color
 ) {
+
+    /** Azur, o mesmo padrao que a migration gravou nas linhas antigas. */
+    public static final String DEFAULT_COLOR = "#2b4c8c";
 
     public boolean hasRecurrence() {
         return recurrenceRule != null && !recurrenceRule.isBlank();
     }
 
-    /** Cor efetiva, caindo no padrao quando o cliente nao mandou nenhuma. */
+    /** Cor efetiva em minusculas, caindo no padrao quando o cliente nao mandou nenhuma. */
     public String colorOrDefault() {
-        return (color == null || color.isBlank()) ? "blue" : color;
+        return (color == null || color.isBlank()) ? DEFAULT_COLOR : color.toLowerCase(java.util.Locale.ROOT);
     }
 }
