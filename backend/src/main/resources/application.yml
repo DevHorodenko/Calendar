@@ -3,9 +3,11 @@ spring:
     name: calendar-backend
 
   datasource:
-    url: ${DB_URL:jdbc:postgresql://localhost:5432/calendar}
-    username: ${DB_USER:calendar}
-    password: ${DB_PASSWORD:calendar}
+    # H2 em arquivo. AUTO_SERVER deixa uma segunda abertura do app se conectar ao
+    # mesmo banco em vez de morrer com "database may be already in use".
+    url: jdbc:h2:file:${calendar.data-dir:./data}/calendario;AUTO_SERVER=TRUE
+    username: ${DB_USER:sa}
+    password: ${DB_PASSWORD:}
 
   jpa:
     hibernate:
@@ -29,7 +31,7 @@ server:
   port: ${SERVER_PORT:8080}
 
 calendar:
-  # Origem do Vite em desenvolvimento; o frontend chama a API a partir daqui.
+  # Origem do Vite em desenvolvimento; no app instalado o front vem do proprio jar.
   allowed-origins: ${ALLOWED_ORIGINS:http://localhost:5173}
   # Teto de dias que uma consulta pode pedir de uma vez, para a visao de ano nao virar varredura infinita.
   max-range-days: 800

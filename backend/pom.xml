@@ -41,13 +41,11 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-flyway</artifactId>
         </dependency>
+        <!-- H2 em arquivo: o calendario e de um usuario so, entao o banco e um
+             arquivo na pasta dele. Sem servico, sem porta, sem Docker. -->
         <dependency>
-            <groupId>org.flywaydb</groupId>
-            <artifactId>flyway-database-postgresql</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.postgresql</groupId>
-            <artifactId>postgresql</artifactId>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
             <scope>runtime</scope>
         </dependency>
         <dependency>
@@ -65,4 +63,88 @@
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <!--
+            Perfil de empacotamento: compila o frontend e o embute no jar, para o
+            aplicativo instalado ser um processo so, servindo interface e API na
+            mesma porta. Fica fora do build normal porque `mvn test` nao precisa
+            esperar o npm.
+
+            Uso:  mvn -Pdesktop clean package
+        -->
+        <profile>
+            <id>desktop</id>
+            <properties>
+                <frontend.dir>${project.basedir}/../frontend</frontend.dir>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>com.github.eirslett</groupId>
+                        <artifactId>frontend-maven-plugin</artifactId>
+                        <version>2.0.2</version>
+                        <configuration>
+                            <workingDirectory>${frontend.dir}</workingDirectory>
+                            <installDirectory>${project.build.directory}/node</installDirectory>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <!-- Node proprio do build: a versao deixa de depender
+                                     do que esta instalado na maquina. -->
+                                <id>instalar-node</id>
+                                <goals>
+                                    <goal>install-node-and-npm</goal>
+                                </goals>
+                                <configuration>
+                                    <nodeVersion>v24.13.0</nodeVersion>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>npm-ci</id>
+                                <goals>
+                                    <goal>npm</goal>
+                                </goals>
+                                <configuration>
+                                    <arguments>ci</arguments>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>npm-build</id>
+                                <goals>
+                                    <goal>npm</goal>
+                                </goals>
+                                <configuration>
+                                    <arguments>run build</arguments>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-resources-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <!-- O que o Vite gerou vira conteudo estatico do jar. -->
+                                <id>copiar-frontend</id>
+                                <phase>prepare-package</phase>
+                                <goals>
+                                    <goal>copy-resources</goal>
+                                </goals>
+                                <configuration>
+                                    <outputDirectory>${project.build.outputDirectory}/static</outputDirectory>
+                                    <resources>
+                                        <resource>
+                                            <directory>${frontend.dir}/dist</directory>
+                                        </resource>
+                                    </resources>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>

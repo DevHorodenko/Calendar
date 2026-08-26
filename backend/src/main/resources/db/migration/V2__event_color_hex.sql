@@ -11,7 +11,7 @@ SET color = CASE lower(color)
     WHEN 'teal'   THEN '#2b6b6b'
     ELSE '#2b4c8c'
 END
-WHERE color IS NULL OR color !~* '^#[0-9a-f]{6}$';
+WHERE color IS NULL OR NOT REGEXP_LIKE(color, '^#[0-9a-fA-F]{6}$');
 
 UPDATE event_override
 SET color = CASE lower(color)
@@ -23,13 +23,14 @@ SET color = CASE lower(color)
     WHEN 'teal'   THEN '#2b6b6b'
     ELSE '#2b4c8c'
 END
-WHERE color IS NOT NULL AND color !~* '^#[0-9a-f]{6}$';
+WHERE color IS NOT NULL AND NOT REGEXP_LIKE(color, '^#[0-9a-fA-F]{6}$');
 
 ALTER TABLE event ALTER COLUMN color SET DEFAULT '#2b4c8c';
 
 -- O formato passa a ser garantido pelo banco, e nao so pela validacao da API.
 ALTER TABLE event
-    ADD CONSTRAINT event_color_is_hex CHECK (color ~* '^#[0-9a-f]{6}$');
+    ADD CONSTRAINT event_color_is_hex CHECK (REGEXP_LIKE(color, '^#[0-9a-fA-F]{6}$'));
 
 ALTER TABLE event_override
-    ADD CONSTRAINT event_override_color_is_hex CHECK (color IS NULL OR color ~* '^#[0-9a-f]{6}$');
+    ADD CONSTRAINT event_override_color_is_hex
+    CHECK (color IS NULL OR REGEXP_LIKE(color, '^#[0-9a-fA-F]{6}$'));

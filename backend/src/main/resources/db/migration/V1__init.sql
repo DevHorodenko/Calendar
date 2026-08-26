@@ -1,24 +1,21 @@
 -- Series do calendario. Sem recurrence_rule a linha e um evento unico.
 CREATE TABLE event (
-    id              uuid         PRIMARY KEY,
-    title           varchar(255) NOT NULL,
-    description     text,
+    id              uuid          PRIMARY KEY,
+    title           varchar(255)  NOT NULL,
+    description     varchar(4000),
     location        varchar(255),
-    all_day         boolean      NOT NULL DEFAULT false,
-    start_at        timestamp    NOT NULL,
-    end_at          timestamp    NOT NULL,
+    all_day         boolean       NOT NULL DEFAULT false,
+    start_at        timestamp     NOT NULL,
+    end_at          timestamp     NOT NULL,
     recurrence_rule varchar(500),
-    color           varchar(32)  NOT NULL DEFAULT 'blue',
-    created_at      timestamptz  NOT NULL,
-    updated_at      timestamptz  NOT NULL,
+    color           varchar(32)   NOT NULL DEFAULT 'blue',
+    created_at      timestamp with time zone NOT NULL,
+    updated_at      timestamp with time zone NOT NULL,
     CONSTRAINT event_ends_after_start CHECK (end_at >= start_at)
 );
 
 -- Consulta principal: tudo que comeca dentro da janela visivel.
 CREATE INDEX idx_event_start_at ON event (start_at);
-
--- Series recorrentes sao sempre expandidas, entao vale te-las separadas.
-CREATE INDEX idx_event_recurring ON event (start_at) WHERE recurrence_rule IS NOT NULL;
 
 -- Excecoes de ocorrencias: uma ocorrencia cancelada ou alterada dentro de uma serie.
 CREATE TABLE event_override (
@@ -27,7 +24,7 @@ CREATE TABLE event_override (
     occurrence_start timestamp    NOT NULL,
     type             varchar(16)  NOT NULL,
     title            varchar(255),
-    description      text,
+    description      varchar(4000),
     location         varchar(255),
     all_day          boolean,
     start_at         timestamp,

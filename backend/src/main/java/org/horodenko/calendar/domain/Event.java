@@ -39,7 +39,7 @@ public class Event {
     @Column(nullable = false)
     private String title;
 
-    @Column(columnDefinition = "text")
+    @Column(length = 4000)
     private String description;
 
     private String location;
