@@ -17,7 +17,12 @@ interface Props {
   onCreateAt: (moment: Date) => void
 }
 
-const HOUR_HEIGHT = 48
+/**
+ * Altura de uma hora em pixels. E a mesma medida usada pelo CSS (--hour-height),
+ * escrita na raiz da grade abaixo para que linhas, rotulos e eventos nunca
+ * saiam de sincronia.
+ */
+const HOUR_HEIGHT = 52
 const MINUTES_PER_DAY = 24 * 60
 /** Altura minima para um evento curto continuar clicavel e legivel. */
 const MIN_EVENT_HEIGHT = 18
@@ -110,7 +115,8 @@ export default function TimeGridView({ days, occurrencesByDay, onSelectOccurrenc
 
   // Abre a agenda perto do horario comercial em vez de na madrugada.
   useEffect(() => {
-    bodyRef.current?.parentElement?.scrollTo({ top: 7 * HOUR_HEIGHT })
+    // O rolamento acontece no .viewport, algumas camadas acima do corpo da grade.
+    bodyRef.current?.closest('.viewport')?.scrollTo({ top: 7 * HOUR_HEIGHT })
   }, [])
 
   const hasAllDay = days.some((day) =>
@@ -128,7 +134,7 @@ export default function TimeGridView({ days, occurrencesByDay, onSelectOccurrenc
   }
 
   return (
-    <div className="timegrid">
+    <div className="timegrid" style={{ ['--hour-height' as string]: `${HOUR_HEIGHT}px` }}>
       <div className="timegrid__header" style={{ gridTemplateColumns: columns }}>
         <div className="timegrid__corner" />
         {days.map((day) => (

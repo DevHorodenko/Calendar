@@ -40,6 +40,8 @@
     ),
     repeating-linear-gradient(2deg, rgb(120 85 45 / 2.5%) 0 3px, transparent 3px 7px);
 
+  /* Precisa casar com HOUR_HEIGHT de TimeGridView.tsx, que reescreve esta
+     variavel na raiz da grade; se divergirem, os eventos saem do lugar. */
   --hour-height: 52px;
   --time-gutter: 66px;
 }
