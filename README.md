@@ -62,10 +62,12 @@ O script faz tres coisas: embute o frontend compilado no jar (um processo so ser
 interface e API), monta um runtime Java so com os modulos usados via `jlink`
 (~54 MB, contra ~291 MB do JDK inteiro) e junta tudo com `jpackage`.
 
-O `.exe` precisa do **WiX**. O script procura o `candle.exe` do WiX 3.14 no PATH e em
-`build/wix3`; sem ele, gera so a versao portatil e explica como obter os binarios --
-que rodam de uma pasta, sem instalar nada e sem privilegio de administrador. O WiX 7
-tambem funciona, mas exige aceitar o EULA da *Open Source Maintenance Fee*.
+O `.exe` precisa do **WiX**. Do JDK 24 em diante o `jpackage` so aceita o `wix.exe` do
+WiX 4 ou mais novo (`dotnet tool install --global wix`); o WiX 3, que rodava de uma pasta
+com `candle.exe`, nao serve mais. Sem WiX utilizavel o script gera so a versao portatil e
+explica o que falta. O WiX 7 recusa qualquer comando ate a EULA da *Open Source
+Maintenance Fee* ser aceita uma vez (`wix eula accept wix7`) -- uma decisao de
+licenciamento de quem empacota; quem preferir evita-la ficando no WiX 5.
 
 ### Atualizando depois de mexer no codigo
 

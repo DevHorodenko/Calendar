@@ -12,8 +12,9 @@
       3. jpackage               -> junta tudo num .exe instalador, com atalho no
                                    Menu Iniciar e entrada de desinstalacao.
 
-    O jpackage precisa do WiX para gerar o .exe. O script procura o candle.exe do
-    WiX 3.14 no PATH e em build\wix3; se nao achar, ainda gera a versao portatil.
+    O jpackage precisa do WiX para gerar o .exe. Do JDK 24 em diante ele exige o
+    wix.exe do WiX 4 ou mais novo -- o WiX 3 (candle.exe/light.exe) deixou de ser
+    aceito. Sem um WiX utilizavel, o script ainda gera a versao portatil.
 
 .PARAMETER SkipInstaller
     Gera so a pasta portatil, sem tentar o .exe. Util quando o WiX nao esta por perto.
@@ -149,24 +150,46 @@ if ($SkipInstaller) {
     return
 }
 
-# O WiX 3.14 roda direto de uma pasta, sem instalacao e sem privilegio de
-# administrador. O WiX 7 tambem serve, mas exige aceitar o EULA da Open Source
-# Maintenance Fee -- uma decisao de licenciamento de quem esta empacotando.
-$wixLocal = Join-Path $build 'wix3'
-if (Test-Path (Join-Path $wixLocal 'candle.exe')) {
-    $env:PATH = "$wixLocal;$env:PATH"
-}
-
-if (-not (Get-Command candle.exe -ErrorAction SilentlyContinue)) {
+# O jpackage do JDK 24 em diante chama o wix.exe do WiX 4 ou mais novo; o WiX 3,
+# que rodava de uma pasta so com o candle.exe, nao e mais aceito.
+if (-not (Get-Command wix.exe -ErrorAction SilentlyContinue)) {
     Write-Warning @"
 WiX nao encontrado; o instalador .exe nao sera gerado.
 A versao portatil ficou pronta em $dist\Calendario.
 
-Para habilitar o .exe, baixe os binarios do WiX 3.14 (sem instalar nada):
-  curl -L -o build\wix314.zip https://github.com/wixtoolset/wix3/releases/download/wix3141rtm/wix314-binaries.zip
-  Expand-Archive build\wix314.zip -DestinationPath build\wix3
+Para habilitar o .exe, instale o WiX (precisa do .NET SDK):
+  dotnet tool install --global wix
 "@
     return
+}
+
+# O jpackage nao repassa a saida do wix: um wix que recusa rodar vira so um
+# 'exited with 1 code' no meio do log. Entao perguntamos antes, com o motivo na tela.
+& wix.exe --version | Out-Null
+if ($LASTEXITCODE -ne 0) {
+    Write-Warning @"
+O wix.exe esta instalado mas recusou rodar (o motivo saiu acima); o instalador .exe nao sera gerado.
+A versao portatil ficou pronta em $dist\Calendario.
+
+No WiX 7 o motivo costuma ser o WIX7015: a EULA da Open Source Maintenance Fee
+precisa ser aceita uma vez. E uma decisao de licenciamento de quem empacota:
+  wix eula accept wix7
+
+Quem preferir nao aceita-la pode ficar no WiX 5, que o jpackage tambem usa:
+  dotnet tool uninstall --global wix
+  dotnet tool install --global wix --version 5.0.2
+"@
+    return
+}
+
+# O jpackage monta o .msi passando estas duas extensoes ao wix, que as procura no
+# cache global -- ele nao baixa sozinho durante o build, entao garantimos aqui.
+$extensoes = & wix.exe extension list -g
+foreach ($extensao in @('WixToolset.Util.wixext', 'WixToolset.UI.wixext')) {
+    if ($extensoes -notmatch [regex]::Escape($extensao)) {
+        Write-Host "    instalando a extensao $extensao do WiX"
+        & wix.exe extension add -g $extensao | Out-Null
+    }
 }
 
 # O Windows Installer nao reinstala a mesma versao: ele reconhece o produto ja
