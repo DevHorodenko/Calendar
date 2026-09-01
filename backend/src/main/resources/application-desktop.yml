@@ -1,0 +1,24 @@
+# Perfil do aplicativo instalado: um processo so, servindo a interface e a API.
+spring:
+  main:
+    # A bandeja do sistema e AWT; o Spring Boot liga headless por padrao e
+    # o icone simplesmente nao apareceria.
+    headless: false
+
+server:
+  # Porta zero: o sistema escolhe uma livre. Como o app abre o navegador sozinho,
+  # ninguem precisa saber o numero -- e nao ha risco de esbarrar em algo na 8080.
+  port: 0
+
+logging:
+  file:
+    name: ${calendar.data-dir}/calendario.log
+  level:
+    root: WARN
+    org.horodenko.calendar: INFO
+
+calendar:
+  # Abrir a janela ao subir. A entrada de inicializacao automatica do Windows passa
+  # false, para o aplicativo comecar calado na bandeja em vez de pular na sua cara
+  # toda vez que o computador liga.
+  open-on-start: ${CALENDAR_OPEN_ON_START:true}

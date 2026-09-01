@@ -17,7 +17,7 @@ export default function EventChip({ occurrence, onClick, hideTime }: Props) {
     <button
       type="button"
       className="chip"
-      style={{ ['--chip' as string]: `var(--event-${occurrence.color})` }}
+      style={{ ['--chip' as string]: occurrence.color }}
       title={`${occurrence.title}${occurrence.location ? ` - ${occurrence.location}` : ''}`}
       onClick={(event) => {
         event.stopPropagation()

@@ -136,8 +136,10 @@ export default function RecurrenceEditor({ value, start, onChange }: Props) {
           )}
 
           <div className="field">
+            {/* "A repeticao termina" e nao so "Termina": o campo de fim do evento,
+                logo acima, responde outra pergunta. */}
             <label className="field__label" htmlFor="recurrence-ending">
-              Termina
+              A repeticao termina
             </label>
             <select
               id="recurrence-ending"

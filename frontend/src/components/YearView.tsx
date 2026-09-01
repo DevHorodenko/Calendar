@@ -91,7 +91,7 @@ function MiniMonth({
                     <span
                       key={color}
                       className="mini__dot"
-                      style={{ ['--chip' as string]: `var(--event-${color})` }}
+                      style={{ ['--chip' as string]: color }}
                     />
                   ))}
                 </span>

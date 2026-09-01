@@ -2,10 +2,19 @@ import { useState } from 'react'
 import RecurrenceEditor from './RecurrenceEditor'
 import ScopeDialog from './ScopeDialog'
 import { ApiError, api } from '../lib/api'
-import { fromLocalIso, toDateInputValue, toInputValue, toLocalIso } from '../lib/dates'
+import {
+  datePartOf,
+  fromLocalIso,
+  timePartOf,
+  toInputValue,
+  toLocalIso,
+  withDatePart,
+  withTimePart,
+} from '../lib/dates'
 import { buildRrule, defaultRecurrence, parseRrule } from '../lib/recurrence'
 import type { RecurrenceState } from '../lib/recurrence'
-import { COLOR_LABELS, EVENT_COLORS } from '../types'
+import ColorPicker from './ColorPicker'
+import { DEFAULT_EVENT_COLOR } from '../types'
 import type { EditScope, EventColor, EventRequest, Occurrence } from '../types'
 
 interface Props {
@@ -28,9 +37,19 @@ export default function EventDialog({ occurrence, initialStart, onClose, onSaved
   const [allDay, setAllDay] = useState(occurrence?.allDay ?? false)
   const [startValue, setStartValue] = useState(toInputValue(start))
   const [endValue, setEndValue] = useState(toInputValue(end))
-  const [color, setColor] = useState<EventColor>(occurrence?.color ?? 'blue')
+  const [color, setColor] = useState<EventColor>(occurrence?.color ?? DEFAULT_EVENT_COLOR)
   const [recurrence, setRecurrence] = useState<RecurrenceState>(() =>
     occurrence ? parseRrule(occurrence.recurrenceRule, start) : defaultRecurrence(start),
+  )
+
+  /**
+   * Numa serie, a data de fim descreve a duracao de uma ocorrencia, e nao o fim da
+   * repeticao -- quem manda nisso e o "A repeticao termina" da caixa de recorrencia.
+   * Como quase toda ocorrencia cabe num dia so, a data de fim some enquanto o evento
+   * se repete, e este escape a traz de volta para os casos que atravessam dias.
+   */
+  const [endsOnAnotherDay, setEndsOnAnotherDay] = useState(
+    () => toInputValue(start).slice(0, 10) !== toInputValue(end).slice(0, 10),
   )
 
   const [error, setError] = useState<string | null>(null)
@@ -38,6 +57,13 @@ export default function EventDialog({ occurrence, initialStart, onClose, onSaved
   const [pendingAction, setPendingAction] = useState<'save' | 'delete' | null>(null)
 
   const startDate = fromLocalIso(startValue)
+  const repeating = recurrence.preset !== 'none'
+  const showEndDate = !repeating || endsOnAnotherDay
+
+  /** Fim que vale de fato: com a data escondida, a ocorrencia termina no dia em que comecou. */
+  function effectiveEnd(): string {
+    return showEndDate ? endValue : withDatePart(endValue, datePartOf(startValue))
+  }
 
   /**
    * Um evento de dia inteiro ocupa da meia-noite ao ultimo segundo do dia final,
@@ -45,7 +71,7 @@ export default function EventDialog({ occurrence, initialStart, onClose, onSaved
    */
   function buildRequest(): EventRequest {
     const from = fromLocalIso(startValue)
-    const to = fromLocalIso(endValue)
+    const to = fromLocalIso(effectiveEnd())
 
     if (allDay) {
       from.setHours(0, 0, 0, 0)
@@ -64,12 +90,41 @@ export default function EventDialog({ occurrence, initialStart, onClose, onSaved
     }
   }
 
+  function moveStart(next: string) {
+    setStartValue(next)
+    // Com a data de fim escondida, ela acompanha a de inicio em vez de ficar para tras.
+    const glued = showEndDate ? endValue : withDatePart(endValue, datePartOf(next))
+    // Mover o inicio para depois do fim arrasta o fim junto.
+    setEndValue(fromLocalIso(next) > fromLocalIso(glued) ? next : glued)
+  }
+
+  /**
+   * Ligar a repeticao esconde a data de fim, entao um intervalo de varios dias que ja
+   * estivesse montado marca o escape sozinho: melhor mostrar o campo do que encolher
+   * o evento sem avisar.
+   */
+  function changeRecurrence(next: RecurrenceState) {
+    if (next.preset !== 'none' && !repeating && datePartOf(endValue) !== datePartOf(startValue)) {
+      setEndsOnAnotherDay(true)
+    }
+    setRecurrence(next)
+  }
+
+  function toggleEndsOnAnotherDay(checked: boolean) {
+    setEndsOnAnotherDay(checked)
+    if (!checked) {
+      setEndValue(withDatePart(endValue, datePartOf(startValue)))
+    }
+  }
+
   function validate(): string | null {
     if (!title.trim()) {
       return 'Escreva um titulo para o evento.'
     }
-    if (fromLocalIso(endValue) < fromLocalIso(startValue)) {
-      return 'O fim do evento nao pode ser antes do inicio.'
+    if (fromLocalIso(effectiveEnd()) < fromLocalIso(startValue)) {
+      return repeating && !endsOnAnotherDay
+        ? 'O fim vem antes do inicio. Se o evento atravessa a meia-noite, marque "termina em outro dia".'
+        : 'O fim do evento nao pode ser antes do inicio.'
     }
     if (recurrence.preset === 'custom' && recurrence.freq === 'WEEKLY' && recurrence.byDay.length === 0) {
       return 'Escolha pelo menos um dia da semana para a repeticao.'
@@ -182,42 +237,75 @@ export default function EventDialog({ occurrence, initialStart, onClose, onSaved
             Dia inteiro
           </label>
 
-          <div className="field__row">
-            <div className="field">
-              <label className="field__label" htmlFor="event-start">
-                Inicio
-              </label>
-              <input
-                id="event-start"
-                type={allDay ? 'date' : 'datetime-local'}
-                value={allDay ? startValue.slice(0, 10) : startValue}
-                onChange={(event) => {
-                  const next = allDay ? `${event.target.value}T00:00` : event.target.value
-                  setStartValue(next)
-                  // Arrastar o inicio para depois do fim empurra o fim junto.
-                  if (fromLocalIso(next) > fromLocalIso(endValue)) {
-                    setEndValue(next)
-                  }
-                }}
-              />
-            </div>
-            <div className="field">
-              <label className="field__label" htmlFor="event-end">
-                Fim
-              </label>
-              <input
-                id="event-end"
-                type={allDay ? 'date' : 'datetime-local'}
-                value={allDay ? endValue.slice(0, 10) : endValue}
-                min={allDay ? toDateInputValue(startDate) : startValue}
-                onChange={(event) =>
-                  setEndValue(allDay ? `${event.target.value}T23:59` : event.target.value)
-                }
-              />
-            </div>
+          <div className="field">
+            <label className="field__label" htmlFor="event-start-date">
+              Inicio
+            </label>
+            <input
+              id="event-start-date"
+              type="date"
+              value={datePartOf(startValue)}
+              onChange={(event) => moveStart(withDatePart(startValue, event.target.value))}
+            />
           </div>
 
-          <RecurrenceEditor value={recurrence} start={startDate} onChange={setRecurrence} />
+          {showEndDate && (
+            <div className="field">
+              <label className="field__label" htmlFor="event-end-date">
+                {repeating ? 'Termina em' : 'Fim'}
+              </label>
+              <input
+                id="event-end-date"
+                type="date"
+                value={datePartOf(endValue)}
+                min={datePartOf(startValue)}
+                onChange={(event) => setEndValue(withDatePart(endValue, event.target.value))}
+              />
+            </div>
+          )}
+
+          {repeating && (
+            <label className="checkbox">
+              <input
+                type="checkbox"
+                checked={endsOnAnotherDay}
+                onChange={(event) => toggleEndsOnAnotherDay(event.target.checked)}
+              />
+              Termina em outro dia
+            </label>
+          )}
+
+          {!allDay && (
+            <div className="time-range">
+              <div className="field">
+                <label className="field__label" htmlFor="event-start-time">
+                  Horario inicial
+                </label>
+                <input
+                  id="event-start-time"
+                  type="time"
+                  value={timePartOf(startValue)}
+                  onChange={(event) => moveStart(withTimePart(startValue, event.target.value))}
+                />
+              </div>
+              <span className="time-range__dash" aria-hidden>
+                &ndash;
+              </span>
+              <div className="field">
+                <label className="field__label" htmlFor="event-end-time">
+                  Horario final
+                </label>
+                <input
+                  id="event-end-time"
+                  type="time"
+                  value={timePartOf(endValue)}
+                  onChange={(event) => setEndValue(withTimePart(endValue, event.target.value))}
+                />
+              </div>
+            </div>
+          )}
+
+          <RecurrenceEditor value={recurrence} start={startDate} onChange={changeRecurrence} />
 
           <div className="field">
             <label className="field__label" htmlFor="event-location">
@@ -246,20 +334,7 @@ export default function EventDialog({ occurrence, initialStart, onClose, onSaved
 
           <div className="field">
             <span className="field__label">Cor</span>
-            <div className="swatches">
-              {EVENT_COLORS.map((option) => (
-                <button
-                  key={option}
-                  type="button"
-                  className="swatch"
-                  aria-pressed={color === option}
-                  aria-label={COLOR_LABELS[option]}
-                  title={COLOR_LABELS[option]}
-                  style={{ ['--chip' as string]: `var(--event-${option})` }}
-                  onClick={() => setColor(option)}
-                />
-              ))}
-            </div>
+            <ColorPicker value={color} onChange={setColor} />
           </div>
         </div>
 

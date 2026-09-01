@@ -37,6 +37,29 @@ export function toDateInputValue(date: Date): string {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
 }
 
+/**
+ * O formulario guarda data e hora numa string so ("2026-08-25T18:00"), mas os mostra
+ * em dois campos. Estas funcoes leem e trocam cada metade sem desmontar o valor.
+ *
+ * Um campo esvaziado nao pode zerar a string inteira, senao o formulario fica num
+ * estado que nao da para ler de volta: a metade que sumiu volta ao que era.
+ */
+export function datePartOf(value: string): string {
+  return value.slice(0, 10)
+}
+
+export function timePartOf(value: string): string {
+  return value.slice(11, 16)
+}
+
+export function withDatePart(value: string, date: string): string {
+  return `${date || datePartOf(value)}T${timePartOf(value) || '00:00'}`
+}
+
+export function withTimePart(value: string, time: string): string {
+  return `${datePartOf(value)}T${time || '00:00'}`
+}
+
 export function startOfDay(date: Date): Date {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate())
 }

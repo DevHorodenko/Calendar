@@ -32,14 +32,20 @@ export interface EventRequest {
   color: EventColor
 }
 
-export const EVENT_COLORS = ['blue', 'green', 'amber', 'red', 'violet', 'teal'] as const
-export type EventColor = (typeof EVENT_COLORS)[number]
+/**
+ * Cor do evento em hex (#rrggbb). Era um conjunto fechado de nomes; virou cor livre
+ * para a roda poder entregar qualquer valor. O backend recusa o que nao for hex.
+ */
+export type EventColor = string
 
-export const COLOR_LABELS: Record<EventColor, string> = {
-  blue: 'Azul',
-  green: 'Verde',
-  amber: 'Ambar',
-  red: 'Vermelho',
-  violet: 'Violeta',
-  teal: 'Turquesa',
-}
+export const DEFAULT_EVENT_COLOR = '#2b4c8c'
+
+/** Atalhos para os esmaltes da heraldica, ao lado da roda. */
+export const EVENT_PRESETS: ReadonlyArray<{ value: string; label: string }> = [
+  { value: '#2b4c8c', label: 'Azur' },
+  { value: '#2f5c33', label: 'Sinopla' },
+  { value: '#a3781d', label: 'Ouro' },
+  { value: '#9c2b21', label: 'Goles' },
+  { value: '#6a3a6e', label: 'Purpura' },
+  { value: '#2b6b6b', label: 'Verdemar' },
+]

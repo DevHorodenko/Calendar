@@ -4,6 +4,24 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Calendario</title>
+    <!-- Em modo aplicativo, o icone da janela e da barra de tarefas vem daqui.
+         O Vite reescreve este caminho para o asset versionado na compilacao. -->
+    <link rel="icon" type="image/png" href="/src/assets/one-ring.png" />
+    <!-- O manifesto e o que permite "Instalar este site como um aplicativo":
+         e dele que a instalacao tira o nome e o icone da barra de tarefas. -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="theme-color" content="#8f2f1d" />
+
+    <!-- Cinzel: capitulares romanas, para titulos e botoes.
+         EB Garamond: serifada antiga, legivel em texto corrido.
+         UnifrakturMaguntia: gotica, so no nome do aplicativo -- em bloco de texto
+         ela seria ilegivel. Todas caem em serifadas do sistema se nao carregarem. -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400..700&family=EB+Garamond:ital,wght@0,400..700;1,400..700&family=UnifrakturMaguntia&display=swap"
+      rel="stylesheet"
+    />
   </head>
   <body>
     <div id="root"></div>
