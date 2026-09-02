@@ -91,8 +91,25 @@ function countAndUnit(minutes: number): string {
   return `${amount} ${amount === 1 ? 'dia' : 'dias'}`
 }
 
+/**
+ * Com o que um aviso recem-criado ja vem escrito.
+ *
+ * Comeca preenchido em vez de vazio porque o campo em branco nao ensina nada: os
+ * marcadores sao o recurso que faz uma serie inteira caber num texto so, e ninguem
+ * descobre isso olhando um retangulo vazio. Aqui eles aparecem ja montados, prontos
+ * para trocar por texto proprio.
+ *
+ * Um evento sem descricao nao deixa linha sobrando: o backend troca o marcador por
+ * vazio e apara as pontas do texto antes de enviar.
+ */
+export const DEFAULT_MESSAGE_TEMPLATE = '{titulo} {antecedencia}\n\n{descricao}'
+
 export function newReminder(existing: Reminder[]): Reminder {
-  return { minutesBefore: firstFreeLead(existing), message: '', enabled: true }
+  return {
+    minutesBefore: firstFreeLead(existing),
+    message: DEFAULT_MESSAGE_TEMPLATE,
+    enabled: true,
+  }
 }
 
 /**

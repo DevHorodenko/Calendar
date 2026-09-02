@@ -70,6 +70,29 @@ class ReminderMessageFormatterTest {
         assertThat(formatter.describeLead(3 * 24 * 60)).isEqualTo("em 3 dias");
     }
 
+    /**
+     * O modelo que a tela ja entrega preenchido ao adicionar um aviso. Esta aqui porque
+     * ele deixou de ser um exemplo e virou o texto que a maioria dos lembretes vai usar.
+     */
+    private static final String UI_TEMPLATE = "{titulo} {antecedencia}\n\n{descricao}";
+
+    @Test
+    @DisplayName("O modelo padrao da tela monta titulo, antecedencia e descricao")
+    void fillsInTheTemplateTheScreenOffers() {
+        String text = formatter.format(UI_TEMPLATE,
+                occurrence("Consulta", null, "levar exames antigos", false), 60);
+
+        assertThat(text).isEqualTo("Consulta em 1 hora\n\nlevar exames antigos");
+    }
+
+    @Test
+    @DisplayName("Sem descricao, o modelo padrao nao deixa linha em branco sobrando")
+    void templateLeavesNoDanglingBlankLine() {
+        String text = formatter.format(UI_TEMPLATE, occurrence("Treino", null, null, false), 30);
+
+        assertThat(text).isEqualTo("Treino em 30 minutos");
+    }
+
     @Test
     @DisplayName("Mensagem longa demais e cortada, para o provedor nao recusar a URL")
     void truncatesOverlongMessages() {

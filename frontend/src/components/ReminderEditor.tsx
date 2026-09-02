@@ -102,9 +102,11 @@ export default function ReminderEditor({
               </button>
             </div>
 
+            {/* Tres linhas: o modelo que vem preenchido ocupa exatamente isso, e
+                aparecer inteiro sem rolar e o que faz ele servir de exemplo. */}
             <textarea
               className="reminder__message"
-              rows={2}
+              rows={3}
               value={reminder.message ?? ''}
               placeholder={`Lembrete: {titulo} comeca ${leadPhrase(reminder.minutesBefore)}...`}
               aria-label="Mensagem do aviso"
