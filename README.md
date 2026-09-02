@@ -1,7 +1,8 @@
 # Calendario
 
-Aplicacao web de calendario pessoal com visoes de ano, mes, semana e dia, e cadastro de
-eventos unicos e recorrentes.
+Aplicacao web de calendario pessoal com visoes de ano, mes, semana e dia, cadastro de
+eventos unicos e recorrentes, e lembretes no Telegram e na area de trabalho antes de o
+evento comecar.
 
 ## Stack
 
@@ -11,6 +12,7 @@ eventos unicos e recorrentes.
 | Persistencia | H2 em arquivo, JPA/Hibernate, Flyway |
 | Frontend | React 19, TypeScript, Vite |
 | Recorrencia | RRULE da RFC 5545, expandida no backend |
+| Avisos | Telegram (API de bots) e balao nativo do Windows, por um agendador no backend |
 
 Sem autenticacao: a aplicacao roda local e atende um usuario so.
 
@@ -267,6 +269,97 @@ FREQ=DAILY;INTERVAL=3;COUNT=4       de tres em tres dias, quatro vezes
 FREQ=YEARLY;BYMONTH=3,9;BYMONTHDAY=10   10 de marco e 10 de setembro, todo ano
 ```
 
+## Lembretes
+
+Cada evento pode ter ate dez avisos. Um aviso e um par -- **quanto tempo antes** e **o que
+dizer** -- e pertence a serie: quem se repete toda terca leva os mesmos avisos em todas as
+tercas, cada uma com o seu envio.
+
+A mensagem em branco usa um texto padrao montado a partir do evento. Escrevendo uma
+mensagem propria, estes marcadores sao trocados na hora do envio:
+
+```
+{titulo}  {data}  {hora}  {local}  {descricao}  {antecedencia}
+```
+
+Assim uma serie nao precisa de um texto por ocorrencia: `Consulta {data} as {hora}` serve
+para todas.
+
+### Os dois canais
+
+| Canal | Alcance | Precisa de |
+| --- | --- | --- |
+| Telegram | celular e qualquer maquina com a conta aberta | um bot seu (token) e a conversa |
+| Notificacao do Windows | a area de trabalho desta maquina | nada -- so o aplicativo instalado |
+
+Eles se complementam de proposito. O Telegram te alcanca longe do computador; o balao
+aparece na sua frente mesmo com o Telegram fechado e sem depender de internet. Ligando os
+dois, o mesmo lembrete sai pelos dois, e cada um guarda o proprio registro de envio -- um
+Telegram que falhou nao fica escondido atras de um balao que apareceu.
+
+O balao so existe onde ha icone na bandeja, ou seja, no aplicativo instalado. Rodando em
+desenvolvimento, a tela de ajustes mostra a caixa desabilitada explicando isso.
+
+### Criando o bot do Telegram
+
+No botao **Avisos** da barra superior:
+
+1. No Telegram, fale com [@BotFather](https://t.me/BotFather) e mande `/newbot`.
+2. Escolha um nome e um usuario terminado em `bot`. Ele devolve o token.
+3. Cole o token, abra a conversa com o seu bot, mande `/start` e clique em **Detectar**.
+
+O passo 3 existe porque o id da conversa e um numero que a interface do Telegram nao mostra
+em lugar nenhum. Em vez de mandar caçar esse numero num terceiro bot, o backend consulta o
+`getUpdates` do seu proprio bot e grava o chat de quem falou com ele por ultimo.
+
+Da para salvar so o token e voltar depois com a conversa: a ficha pela metade e gravada de
+boa vontade. O que nao fica pela metade e o envio -- enquanto faltar token ou conversa, nada
+sai, e a tela diz isso.
+
+O token fica na tabela `notification_settings` do proprio banco do usuario, junto com os
+eventos, e nunca volta para a tela: a API responde apenas se existe um gravado.
+
+> **Por que nao WhatsApp?** Mandar texto livre para o WhatsApp sem conta comercial so era
+> possivel por servicos como o CallMeBot, e cada bot deles tem um teto de usuarios: cheio,
+> para de emitir chaves sem dizer nada -- nem erro, nem resposta. A API oficial da Meta
+> exige conta Business e template aprovado, o que mataria a mensagem livre por evento. O
+> Telegram e oficial, gratuito, sem fila, e o bot e seu.
+
+### Como o disparo funciona
+
+Nao ha fila nem tarefa agendada por evento. A cada meio minuto o `ReminderDispatcher`
+pergunta quais ocorrencias comecam dentro da maior antecedencia configurada e, entre elas,
+quais ja passaram do horario de aviso. Uma serie recorrente nao precisa de nada agendado de
+antemao, e mudar o horario de um evento nao deixa aviso orfao para tras -- a proxima volta
+simplesmente pergunta de novo.
+
+Cada envio grava uma linha em `reminder_delivery`, com a chave `reminder_id` +
+`occurrence_start` + `channel`. E o que impede a repeticao: a ocorrencia continua dentro da
+janela ate comecar, entao sem esse registro a mesma mensagem sairia a cada volta. Uma falha
+e reenviada nas voltas seguintes ate `calendar.reminders.max-attempts`, e depois desiste --
+insistir num token errado de meio em meio minuto nao conserta nada.
+
+Dois limites que valem saber:
+
+- **Os avisos so saem com o Calendario aberto.** Ele mora na bandeja do Windows justamente
+  para continuar de pe com a janela fechada; com o computador desligado, nada e enviado. Um
+  aviso que venceu nesse meio tempo sai assim que o app volta, desde que o evento ainda nao
+  tenha comecado.
+- **Aviso atrasado nao sai.** Passados cinco minutos do inicio da ocorrencia, o lembrete
+  perdeu a graca e e descartado.
+
+Os ajustes ficam em `calendar.reminders` no `application.yml` (intervalo da varredura,
+tentativas, retencao do historico, tempo limite do HTTP). `REMINDERS_ENABLED=false`
+desliga o agendador por completo.
+
+### Trocando de canal
+
+`NotificationChannel` e uma interface, e o Spring recolhe todas as implementacoes. Um canal
+novo -- e-mail, ntfy, webhook do Discord -- e uma classe que responde `isReady()` e
+`send()`, mais os campos dele nos ajustes. Nem o agendamento, nem a deduplicacao, nem a
+montagem da mensagem mudam. Foi essa separacao que permitiu trocar o WhatsApp pelo Telegram
+sem tocar em nada disso.
+
 ## API
 
 Base: `http://localhost:8080/api/events`
@@ -280,6 +373,15 @@ Base: `http://localhost:8080/api/events`
 | `PUT` | `/{id}?scope=&occurrenceStart=` | Edita conforme o escopo. |
 | `DELETE` | `/{id}?scope=&occurrenceStart=` | Apaga conforme o escopo. |
 
+Notificacoes, em `http://localhost:8080/api/settings/notifications`:
+
+| Metodo | Rota | O que faz |
+| --- | --- | --- |
+| `GET` | `/` | Ajustes atuais. O token nao volta; so `telegramTokenSet`. |
+| `PUT` | `/` | Grava. `telegramBotToken` em branco mantem o que ja esta la. |
+| `POST` | `/test` | Manda uma conferencia por cada canal ligado, com um resultado por canal. |
+| `POST` | `/telegram/detect-chat` | Le o `getUpdates` do bot e grava a conversa encontrada. |
+
 `from` e `to` sao `LocalDateTime` ISO sem fuso (`2026-09-01T00:00:00`); `to` e exclusivo.
 A janela e limitada a 800 dias (`calendar.max-range-days`), o suficiente para a visao de ano.
 
@@ -290,8 +392,13 @@ curl -X POST http://localhost:8080/api/events \
   -H "Content-Type: application/json" \
   -d '{"title":"Academia","allDay":false,
        "startAt":"2026-09-02T09:00:00","endAt":"2026-09-02T10:00:00",
-       "recurrenceRule":"FREQ=WEEKLY;BYDAY=MO,WE,FR","color":"#2f5c33"}'
+       "recurrenceRule":"FREQ=WEEKLY;BYDAY=MO,WE,FR","color":"#2f5c33",
+       "reminders":[{"minutesBefore":30,"message":"Academia {data} as {hora}"}]}'
 ```
+
+Os avisos viajam junto com o evento, e valem para a serie inteira qualquer que seja o
+`scope` da edicao. Omitir `reminders` num `PUT` apaga os que existiam -- e a lista enviada
+que passa a valer, campo como qualquer outro.
 
 Cancelar uma unica ocorrencia:
 
@@ -310,18 +417,20 @@ validacao, um mapa `fields` campo a campo.
 ```
 backend/src/main/java/org/horodenko/calendar/
 ├── recurrence/   RecurrenceRule (parser) e RecurrenceExpander (expansao)
-├── domain/       Event e EventOverride
+├── domain/       Event, EventOverride, EventReminder e o registro de envio por canal
 ├── repository/   consultas por janela
-├── service/      EventService: escopos de edicao e montagem das ocorrencias
-└── web/          controller, DTOs e tratamento de erro
+├── service/      EventService (escopos de edicao) e os ajustes de notificacao
+├── notification/ disparador, montagem da mensagem e os canais (Telegram, bandeja)
+└── web/          controllers, DTOs e tratamento de erro
 
 installer/
 ├── package-windows.ps1   jlink + jpackage, gera o .exe e a versao portatil
 └── one-ring.ico          icone do aplicativo e do atalho
 
 frontend/src/
-├── lib/          dates (horario local flutuante), api, recurrence (RRULE <-> formulario)
-├── components/   Toolbar, YearView, MonthView, TimeGridView, EventDialog, RecurrenceEditor
+├── lib/          dates (horario local flutuante), api, recurrence, reminders (antecedencia)
+├── components/   Toolbar, YearView, MonthView, TimeGridView, EventDialog, RecurrenceEditor,
+│                 ReminderEditor, NotificationSettingsDialog
 └── App.tsx       navegacao entre visoes e carga da janela
 ```
 
@@ -329,6 +438,7 @@ frontend/src/
 
 - Arrastar e redimensionar eventos na visao de semana.
 - Importar e exportar `.ics` (o modelo ja e RFC 5545).
-- Lembretes e notificacoes.
+- Mais canais de aviso: e-mail, ntfy, webhook -- a interface `NotificationChannel` ja
+  espera por eles.
 - Login, caso o calendario deixe de ser so seu: hoje nao ha `user_id` em lugar nenhum,
   entao seria uma coluna nova em `event` e um filtro nas consultas.

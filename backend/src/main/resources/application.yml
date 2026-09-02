@@ -36,6 +36,23 @@ calendar:
   # Teto de dias que uma consulta pode pedir de uma vez, para a visao de ano nao virar varredura infinita.
   max-range-days: 800
 
+  reminders:
+    # Lembretes. O disparador so roda com o aplicativo aberto -- ele mora na bandeja
+    # justamente para continuar de pe depois que a janela fecha.
+    enabled: ${REMINDERS_ENABLED:true}
+    # De meio em meio minuto: fino o bastante para "15 minutos antes" chegar na hora,
+    # largo o bastante para nao pesar num banco de arquivo.
+    poll-millis: 30000
+    # Folga na subida, para a primeira varredura nao disputar espaco com o Flyway.
+    initial-delay-millis: 20000
+    # Depois disso o lembrete daquela ocorrencia desiste, em vez de insistir numa
+    # credencial errada de meio em meio minuto ate o evento comecar.
+    max-attempts: 3
+    # Por quanto tempo o registro de envio fica de pe. Ele so impede repeticao.
+    history-days: 60
+    http-timeout-seconds: 15
+    purge-cron: "0 40 3 * * *"
+
 logging:
   level:
     org.horodenko.calendar: INFO

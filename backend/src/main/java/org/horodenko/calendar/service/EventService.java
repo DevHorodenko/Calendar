@@ -2,15 +2,19 @@ package org.horodenko.calendar.service;
 
 import org.horodenko.calendar.domain.Event;
 import org.horodenko.calendar.domain.EventOverride;
+import org.horodenko.calendar.domain.EventReminder;
 import org.horodenko.calendar.domain.OverrideType;
 import org.horodenko.calendar.recurrence.RecurrenceExpander;
 import org.horodenko.calendar.recurrence.RecurrenceRule;
 import org.horodenko.calendar.repository.EventOverrideRepository;
+import org.horodenko.calendar.repository.EventReminderRepository;
 import org.horodenko.calendar.repository.EventRepository;
 import org.horodenko.calendar.web.dto.EditScope;
 import org.horodenko.calendar.web.dto.EventRequest;
 import org.horodenko.calendar.web.dto.EventSeriesResponse;
 import org.horodenko.calendar.web.dto.OccurrenceResponse;
+import org.horodenko.calendar.web.dto.ReminderRequest;
+import org.horodenko.calendar.web.dto.ReminderResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,6 +26,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -37,15 +42,18 @@ public class EventService {
 
     private final EventRepository eventRepository;
     private final EventOverrideRepository overrideRepository;
+    private final EventReminderRepository reminderRepository;
     private final RecurrenceExpander expander;
     private final long maxRangeDays;
 
     public EventService(EventRepository eventRepository,
                         EventOverrideRepository overrideRepository,
+                        EventReminderRepository reminderRepository,
                         RecurrenceExpander expander,
                         @Value("${calendar.max-range-days:800}") long maxRangeDays) {
         this.eventRepository = eventRepository;
         this.overrideRepository = overrideRepository;
+        this.reminderRepository = reminderRepository;
         this.expander = expander;
         this.maxRangeDays = maxRangeDays;
     }
@@ -76,7 +84,37 @@ public class EventService {
 
         occurrences.sort(Comparator.comparing(OccurrenceResponse::startAt)
                 .thenComparing(OccurrenceResponse::title, Comparator.nullsLast(String::compareTo)));
-        return occurrences;
+        return withReminders(occurrences);
+    }
+
+    /**
+     * Anexa a cada ocorrencia os lembretes da serie dela.
+     *
+     * <p>Os avisos vem numa consulta so, depois da expansao, porque um lembrete pertence
+     * a serie: a serie que rende trinta ocorrencias na tela do mes tem os mesmos avisos
+     * nas trinta. Busca-los junto com o evento renderia trinta consultas, ou um produto
+     * cartesiano com as excecoes -- que o Hibernate nem aceita, por serem duas colecoes.
+     */
+    private List<OccurrenceResponse> withReminders(List<OccurrenceResponse> occurrences) {
+        Set<UUID> seriesIds = new HashSet<>();
+        occurrences.forEach(occurrence -> seriesIds.add(occurrence.seriesId()));
+        if (seriesIds.isEmpty()) {
+            return occurrences;
+        }
+
+        Map<UUID, List<ReminderResponse>> bySeries = new HashMap<>();
+        for (EventReminder reminder : reminderRepository.findByEventIds(seriesIds)) {
+            bySeries.computeIfAbsent(reminder.getEvent().getId(), key -> new ArrayList<>())
+                    .add(ReminderResponse.from(reminder));
+        }
+        if (bySeries.isEmpty()) {
+            return occurrences;
+        }
+
+        return occurrences.stream()
+                .map(occurrence -> occurrence.withReminders(
+                        bySeries.getOrDefault(occurrence.seriesId(), List.of())))
+                .toList();
     }
 
     private void expandSeries(Event series, LocalDateTime from, LocalDateTime to,
@@ -155,7 +193,9 @@ public class EventService {
                 request.hasRecurrence() ? normalizeRule(request.recurrenceRule()) : null,
                 request.colorOrDefault()
         );
-        return EventSeriesResponse.from(eventRepository.save(event));
+        Event saved = eventRepository.save(event);
+        applyReminders(saved, request.remindersOrEmpty());
+        return EventSeriesResponse.from(saved);
     }
 
     /**
@@ -198,6 +238,7 @@ public class EventService {
         event.setEndAt(request.endAt());
         event.setRecurrenceRule(newRule);
         event.setColor(request.colorOrDefault());
+        applyReminders(event, request.remindersOrEmpty());
         return event;
     }
 
@@ -215,6 +256,9 @@ public class EventService {
         override.setStartAt(request.startAt());
         override.setEndAt(request.endAt());
         override.setColor(request.colorOrDefault());
+        // O aviso e da serie, e nao da ocorrencia: mesmo mexendo so nesta terca, os
+        // lembretes editados na tela passam a valer para todas as outras.
+        applyReminders(event, request.remindersOrEmpty());
         return event;
     }
 
@@ -246,7 +290,11 @@ public class EventService {
                 newRule,
                 request.colorOrDefault()
         );
-        return eventRepository.save(tail);
+        // A serie original fica com os avisos que ja tinha; os que vieram agora descrevem
+        // o trecho novo, que e o que estava sendo editado.
+        Event saved = eventRepository.save(tail);
+        applyReminders(saved, request.remindersOrEmpty());
+        return saved;
     }
 
     @Transactional
@@ -304,6 +352,44 @@ public class EventService {
         }
     }
 
+    /**
+     * Deixa os lembretes da serie iguais aos que a tela mandou.
+     *
+     * <p>Casa pela antecedencia em vez de apagar tudo e recriar: um aviso que continua
+     * existindo mantem o id, e com ele o registro do que ja foi enviado. Recriando, um
+     * evento salvo minutos antes de comecar teria os avisos tratados como novos e a
+     * mensagem sairia outra vez.
+     *
+     * <p>O evento precisa ja estar gravado quando isto roda: o id do lembrete novo so
+     * nasce quando o Hibernate o escreve, e a resposta e montada antes do fim da
+     * transacao. Sem isso o cliente receberia um aviso sem id.
+     */
+    private void applyReminders(Event event, List<ReminderRequest> requested) {
+        Map<Integer, ReminderRequest> byLead = new LinkedHashMap<>();
+        for (ReminderRequest reminder : requested) {
+            // Dois avisos com a mesma antecedencia sao duas mensagens identicas seguidas,
+            // e a tabela nem aceitaria o par repetido; vale o ultimo.
+            byLead.put(reminder.minutesBefore(), reminder);
+        }
+
+        event.getReminders().removeIf(reminder -> !byLead.containsKey(reminder.getMinutesBefore()));
+
+        for (EventReminder reminder : event.getReminders()) {
+            ReminderRequest wanted = byLead.remove(reminder.getMinutesBefore());
+            reminder.setMessage(wanted.messageOrNull());
+            reminder.setEnabled(wanted.enabledOrDefault());
+        }
+        if (byLead.isEmpty()) {
+            return;
+        }
+        for (ReminderRequest wanted : byLead.values()) {
+            event.addReminder(new EventReminder(
+                    wanted.minutesBefore(), wanted.messageOrNull(), wanted.enabledOrDefault()));
+        }
+        // Antecipa a escrita so para os ids existirem na resposta.
+        eventRepository.flush();
+    }
+
     private EventOverride findOverride(Event event, LocalDateTime occurrenceStart) {
         return event.getOverrides().stream()
                 .filter(override -> override.getOccurrenceStart().equals(occurrenceStart))
@@ -344,7 +430,8 @@ public class EventService {
                 override.getColor() != null ? override.getColor() : event.getColor(),
                 true,
                 true,
-                event.getRecurrenceRule()
+                event.getRecurrenceRule(),
+                List.of()
         );
     }
 
@@ -362,7 +449,8 @@ public class EventService {
                 event.getColor(),
                 event.isRecurring(),
                 modified,
-                event.getRecurrenceRule()
+                event.getRecurrenceRule(),
+                List.of()
         );
     }
 

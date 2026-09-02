@@ -1,7 +1,16 @@
 import { toLocalIso } from './dates'
-import type { EditScope, EventRequest, Occurrence } from '../types'
+import type {
+  ChannelTestResult,
+  EditScope,
+  EventRequest,
+  NotificationSettings,
+  NotificationSettingsInput,
+  Occurrence,
+  TelegramChat,
+} from '../types'
 
 const BASE = '/api/events'
+const NOTIFICATIONS = '/api/settings/notifications'
 
 /** Erro vindo da API, ja com a mensagem que o backend escreveu no ProblemDetail. */
 export class ApiError extends Error {
@@ -78,5 +87,28 @@ export const api = {
 
   remove(id: string, scope: EditScope, occurrenceStart?: Date): Promise<void> {
     return request<void>(`${BASE}/${id}${scopeQuery(scope, occurrenceStart)}`, { method: 'DELETE' })
+  },
+
+  notifications: {
+    settings(): Promise<NotificationSettings> {
+      return request<NotificationSettings>(NOTIFICATIONS)
+    },
+
+    save(settings: NotificationSettingsInput): Promise<NotificationSettings> {
+      return request<NotificationSettings>(NOTIFICATIONS, {
+        method: 'PUT',
+        body: JSON.stringify(settings),
+      })
+    },
+
+    /** Dispara uma mensagem de conferencia por cada canal ligado. */
+    test(): Promise<{ results: ChannelTestResult[] }> {
+      return request<{ results: ChannelTestResult[] }>(`${NOTIFICATIONS}/test`, { method: 'POST' })
+    },
+
+    /** Le as mensagens que o bot recebeu e grava a conversa encontrada. */
+    detectChat(): Promise<TelegramChat> {
+      return request<TelegramChat>(`${NOTIFICATIONS}/telegram/detect-chat`, { method: 'POST' })
+    },
   },
 }

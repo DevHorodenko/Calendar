@@ -3,6 +3,7 @@ import EventDialog from './components/EventDialog'
 import MonthView from './components/MonthView'
 import TimeGridView from './components/TimeGridView'
 import Toolbar from './components/Toolbar'
+import NotificationSettingsDialog from './components/NotificationSettingsDialog'
 import YearView from './components/YearView'
 import { ApiError, api } from './lib/api'
 import {
@@ -82,6 +83,12 @@ export default function App() {
   const [editing, setEditing] = useState<Occurrence | null>(null)
   const [draftStart, setDraftStart] = useState(() => new Date())
 
+  const [settingsOpen, setSettingsOpen] = useState(false)
+  // So para o editor de avisos poder dizer que os lembretes nao vao sair ainda; se a
+  // leitura falhar, o formulario segue funcionando e o silencio nao vira um erro na tela.
+  // Vale o "ready", e nao o "enabled": ligado sem credencial nao envia nada.
+  const [notificationsReady, setNotificationsReady] = useState(false)
+
   const { from, to } = useMemo(() => rangeFor(view, reference), [view, reference])
 
   const load = useCallback(async () => {
@@ -100,6 +107,21 @@ export default function App() {
   useEffect(() => {
     void load()
   }, [load])
+
+  useEffect(() => {
+    let cancelled = false
+    void api.notifications
+      .settings()
+      .then((settings) => {
+        if (!cancelled) {
+          setNotificationsReady(settings.ready)
+        }
+      })
+      .catch(() => undefined)
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   const occurrencesByDay = useMemo(() => groupByDay(occurrences), [occurrences])
 
@@ -144,6 +166,7 @@ export default function App() {
         onNavigate={navigate}
         onToday={() => setReference(new Date())}
         onCreate={() => openCreate()}
+        onOpenNotificationSettings={() => setSettingsOpen(true)}
       />
 
       {error && <div className="status-bar status-bar--error">{error}</div>}
@@ -183,11 +206,20 @@ export default function App() {
           key={editing ? `${editing.seriesId}|${editing.occurrenceStart}` : 'novo'}
           occurrence={editing}
           initialStart={draftStart}
+          notificationsReady={notificationsReady}
           onClose={() => setDialogOpen(false)}
           onSaved={() => {
             setDialogOpen(false)
             void load()
           }}
+          onOpenNotificationSettings={() => setSettingsOpen(true)}
+        />
+      )}
+
+      {settingsOpen && (
+        <NotificationSettingsDialog
+          onClose={() => setSettingsOpen(false)}
+          onSaved={setNotificationsReady}
         />
       )}
     </div>

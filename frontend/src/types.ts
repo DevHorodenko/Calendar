@@ -3,6 +3,21 @@ export type EditScope = 'THIS' | 'THIS_AND_FUTURE' | 'ALL'
 
 export type CalendarView = 'year' | 'month' | 'week' | 'day'
 
+/**
+ * Um aviso preso ao evento, enviado antes de ele comecar.
+ *
+ * O aviso pertence a serie, e nao a uma ocorrencia: quem se repete toda terca tem os
+ * mesmos lembretes em todas as tercas. A mensagem vazia deixa o backend montar o texto
+ * padrao a partir do proprio evento.
+ */
+export interface Reminder {
+  /** Ausente enquanto o lembrete so existe no formulario. */
+  id?: string
+  minutesBefore: number
+  message?: string
+  enabled: boolean
+}
+
 /** Uma aparicao concreta de um evento na tela. */
 export interface Occurrence {
   seriesId: string
@@ -18,6 +33,7 @@ export interface Occurrence {
   recurring: boolean
   modified: boolean
   recurrenceRule?: string
+  reminders: Reminder[]
 }
 
 /** O que se envia ao criar ou editar um evento. */
@@ -30,6 +46,47 @@ export interface EventRequest {
   endAt: string
   recurrenceRule?: string | null
   color: EventColor
+  reminders: Reminder[]
+}
+
+/**
+ * Por onde os avisos saem, como a tela recebe.
+ *
+ * O token nunca volta do servidor; `telegramTokenSet` diz apenas que existe um gravado,
+ * o bastante para a tela mostrar o campo como ja preenchido.
+ */
+export interface NotificationSettings {
+  telegramEnabled: boolean
+  telegramTokenSet: boolean
+  telegramChatId?: string
+  windowsEnabled: boolean
+  /** Se existe bandeja nesta instalacao. Falso em desenvolvimento, sem area de trabalho. */
+  windowsAvailable: boolean
+  /** Algum canal ligado e completo. E o que diz se um aviso tem como sair. */
+  ready: boolean
+  updatedAt?: string
+}
+
+/** O que se envia ao gravar. O token em branco mantem o que ja esta la. */
+export interface NotificationSettingsInput {
+  telegramEnabled: boolean
+  telegramBotToken: string
+  telegramChatId: string
+  windowsEnabled: boolean
+}
+
+/** Como foi a mensagem de teste em cada canal ligado. */
+export interface ChannelTestResult {
+  channel: string
+  ok: boolean
+  detail: string
+}
+
+/** A conversa que o bot encontrou, ou `found: false` se ninguem falou com ele ainda. */
+export interface TelegramChat {
+  found: boolean
+  chatId?: string
+  name?: string
 }
 
 /**

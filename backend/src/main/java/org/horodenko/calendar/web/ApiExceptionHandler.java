@@ -1,5 +1,6 @@
 package org.horodenko.calendar.web;
 
+import org.horodenko.calendar.notification.NotificationException;
 import org.horodenko.calendar.service.EventNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
@@ -23,6 +24,15 @@ public class ApiExceptionHandler {
     @ExceptionHandler(IllegalArgumentException.class)
     public ProblemDetail handleInvalidArgument(IllegalArgumentException e) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, e.getMessage());
+    }
+
+    /**
+     * O canal de aviso recusou ou nao respondeu. Nao e culpa do pedido, entao vai como
+     * 502 -- e o motivo que ele deu vira o texto que a tela mostra.
+     */
+    @ExceptionHandler(NotificationException.class)
+    public ProblemDetail handleNotificationFailure(NotificationException e) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_GATEWAY, e.getMessage());
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

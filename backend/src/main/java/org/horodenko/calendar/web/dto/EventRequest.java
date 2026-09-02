@@ -1,17 +1,22 @@
 package org.horodenko.calendar.web.dto;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * Dados enviados ao criar ou editar um evento.
  *
  * <p>{@code recurrenceRule} vazio significa evento unico. Ao editar com escopo
  * {@link EditScope#THIS}, a regra e ignorada: uma unica ocorrencia nao tem repeticao propria.
+ *
+ * <p>{@code reminders} vale sempre para a serie inteira, qualquer que seja o escopo: um
+ * aviso nao pertence a uma ocorrencia, e sim ao evento que se repete.
  */
 public record EventRequest(
 
@@ -39,11 +44,21 @@ public record EventRequest(
         // que nao for hex impede que texto arbitrario acabe dentro de uma regra CSS.
         @Pattern(regexp = "^$|^#[0-9a-fA-F]{6}$",
                 message = "A cor deve estar no formato hexadecimal, como #8f2f1d")
-        String color
+        String color,
+
+        // Um punhado de avisos ja cobre qualquer evento; o teto existe para uma
+        // requisicao nao encher a janela que o disparador varre.
+        @Valid
+        @Size(max = 10, message = "Um evento pode ter no maximo 10 lembretes")
+        List<ReminderRequest> reminders
 ) {
 
     /** Azur, o mesmo padrao que a migration gravou nas linhas antigas. */
     public static final String DEFAULT_COLOR = "#2b4c8c";
+
+    public List<ReminderRequest> remindersOrEmpty() {
+        return reminders == null ? List.of() : reminders;
+    }
 
     public boolean hasRecurrence() {
         return recurrenceRule != null && !recurrenceRule.isBlank();

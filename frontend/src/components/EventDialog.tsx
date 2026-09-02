@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import RecurrenceEditor from './RecurrenceEditor'
+import ReminderEditor from './ReminderEditor'
 import ScopeDialog from './ScopeDialog'
 import { ApiError, api } from '../lib/api'
 import {
@@ -13,20 +14,31 @@ import {
 } from '../lib/dates'
 import { buildRrule, defaultRecurrence, parseRrule } from '../lib/recurrence'
 import type { RecurrenceState } from '../lib/recurrence'
+import { describeLead, findDuplicateLead } from '../lib/reminders'
 import ColorPicker from './ColorPicker'
 import { DEFAULT_EVENT_COLOR } from '../types'
-import type { EditScope, EventColor, EventRequest, Occurrence } from '../types'
+import type { EditScope, EventColor, EventRequest, Occurrence, Reminder } from '../types'
 
 interface Props {
   /** A ocorrencia sendo editada, ou null quando o evento esta sendo criado. */
   occurrence: Occurrence | null
   /** Horario inicial sugerido ao criar. */
   initialStart: Date
+  /** Se algum canal de aviso esta pronto, para o editor de lembretes dizer quando nao esta. */
+  notificationsReady: boolean
   onClose: () => void
   onSaved: () => void
+  onOpenNotificationSettings: () => void
 }
 
-export default function EventDialog({ occurrence, initialStart, onClose, onSaved }: Props) {
+export default function EventDialog({
+  occurrence,
+  initialStart,
+  notificationsReady,
+  onClose,
+  onSaved,
+  onOpenNotificationSettings,
+}: Props) {
   const editing = occurrence !== null
   const start = occurrence ? fromLocalIso(occurrence.startAt) : initialStart
   const end = occurrence ? fromLocalIso(occurrence.endAt) : new Date(initialStart.getTime() + 60 * 60 * 1000)
@@ -41,6 +53,7 @@ export default function EventDialog({ occurrence, initialStart, onClose, onSaved
   const [recurrence, setRecurrence] = useState<RecurrenceState>(() =>
     occurrence ? parseRrule(occurrence.recurrenceRule, start) : defaultRecurrence(start),
   )
+  const [reminders, setReminders] = useState<Reminder[]>(() => occurrence?.reminders ?? [])
 
   /**
    * Numa serie, a data de fim descreve a duracao de uma ocorrencia, e nao o fim da
@@ -87,6 +100,7 @@ export default function EventDialog({ occurrence, initialStart, onClose, onSaved
       endAt: toLocalIso(to),
       recurrenceRule: buildRrule(recurrence, from),
       color,
+      reminders,
     }
   }
 
@@ -128,6 +142,11 @@ export default function EventDialog({ occurrence, initialStart, onClose, onSaved
     }
     if (recurrence.preset === 'custom' && recurrence.freq === 'WEEKLY' && recurrence.byDay.length === 0) {
       return 'Escolha pelo menos um dia da semana para a repeticao.'
+    }
+    // O backend guardaria so um dos dois, e o aviso perdido sumiria sem explicacao.
+    const repeated = findDuplicateLead(reminders)
+    if (repeated !== null) {
+      return `Ha dois avisos marcados para ${describeLead(repeated)}. Deixe so um.`
     }
     return null
   }
@@ -336,6 +355,14 @@ export default function EventDialog({ occurrence, initialStart, onClose, onSaved
             <span className="field__label">Cor</span>
             <ColorPicker value={color} onChange={setColor} />
           </div>
+
+          <ReminderEditor
+            value={reminders}
+            recurring={repeating}
+            notificationsReady={notificationsReady}
+            onChange={setReminders}
+            onOpenSettings={onOpenNotificationSettings}
+          />
         </div>
 
         <div className="modal__footer">

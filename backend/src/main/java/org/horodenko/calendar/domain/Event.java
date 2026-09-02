@@ -63,6 +63,9 @@ public class Event {
     @OneToMany(mappedBy = "event", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<EventOverride> overrides = new ArrayList<>();
 
+    @OneToMany(mappedBy = "event", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private List<EventReminder> reminders = new ArrayList<>();
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
@@ -114,6 +117,11 @@ public class Event {
     public void removeOverride(EventOverride override) {
         overrides.remove(override);
         override.setEvent(null);
+    }
+
+    public void addReminder(EventReminder reminder) {
+        reminders.add(reminder);
+        reminder.setEvent(this);
     }
 
     public UUID getId() {
@@ -186,6 +194,10 @@ public class Event {
 
     public List<EventOverride> getOverrides() {
         return overrides;
+    }
+
+    public List<EventReminder> getReminders() {
+        return reminders;
     }
 
     public Instant getCreatedAt() {

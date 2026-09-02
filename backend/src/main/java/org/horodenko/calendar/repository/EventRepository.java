@@ -46,6 +46,14 @@ public interface EventRepository extends JpaRepository<Event, UUID> {
             """)
     Optional<Event> findByIdWithOverrides(@Param("id") UUID id);
 
-    @Query("select e from Event e order by e.startAt desc")
+    /**
+     * Uma colecao so no fetch: juntar as excecoes aqui daria duas listas na mesma
+     * consulta, e o Hibernate recusa esse par.
+     */
+    @Query("""
+            select distinct e from Event e
+            left join fetch e.reminders
+            order by e.startAt desc
+            """)
     List<Event> findAllSeries();
 }

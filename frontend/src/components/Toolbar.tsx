@@ -9,6 +9,7 @@ interface Props {
   onNavigate: (direction: -1 | 1) => void
   onToday: () => void
   onCreate: () => void
+  onOpenNotificationSettings: () => void
 }
 
 const VIEW_LABELS: Array<[CalendarView, string]> = [
@@ -18,7 +19,15 @@ const VIEW_LABELS: Array<[CalendarView, string]> = [
   ['day', 'Dia'],
 ]
 
-export default function Toolbar({ view, reference, onViewChange, onNavigate, onToday, onCreate }: Props) {
+export default function Toolbar({
+  view,
+  reference,
+  onViewChange,
+  onNavigate,
+  onToday,
+  onCreate,
+  onOpenNotificationSettings,
+}: Props) {
   return (
     <header className="toolbar">
       <div className="toolbar__brand">
@@ -55,6 +64,16 @@ export default function Toolbar({ view, reference, onViewChange, onNavigate, onT
           </button>
         ))}
       </div>
+
+      <button
+        type="button"
+        className="btn"
+        onClick={onOpenNotificationSettings}
+        title="Como os lembretes chegam ate voce"
+        aria-label="Notificacoes"
+      >
+        Avisos
+      </button>
 
       <button type="button" className="btn btn--primary" onClick={onCreate}>
         + Novo evento

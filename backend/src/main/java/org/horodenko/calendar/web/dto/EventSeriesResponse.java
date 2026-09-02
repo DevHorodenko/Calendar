@@ -1,9 +1,12 @@
 package org.horodenko.calendar.web.dto;
 
 import org.horodenko.calendar.domain.Event;
+import org.horodenko.calendar.domain.EventReminder;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.util.Comparator;
+import java.util.List;
 import java.util.UUID;
 
 /** A serie inteira, como ela esta guardada, sem expandir as ocorrencias. */
@@ -19,7 +22,8 @@ public record EventSeriesResponse(
         String color,
         boolean recurring,
         Instant createdAt,
-        Instant updatedAt
+        Instant updatedAt,
+        List<ReminderResponse> reminders
 ) {
 
     public static EventSeriesResponse from(Event event) {
@@ -35,7 +39,11 @@ public record EventSeriesResponse(
                 event.getColor(),
                 event.isRecurring(),
                 event.getCreatedAt(),
-                event.getUpdatedAt()
+                event.getUpdatedAt(),
+                event.getReminders().stream()
+                        .sorted(Comparator.comparingInt(EventReminder::getMinutesBefore))
+                        .map(ReminderResponse::from)
+                        .toList()
         );
     }
 }

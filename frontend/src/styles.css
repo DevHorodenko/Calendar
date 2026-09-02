@@ -850,6 +850,8 @@ input[type='number'],
 input[type='date'],
 input[type='time'],
 input[type='datetime-local'],
+input[type='tel'],
+input[type='password'],
 select,
 textarea {
   width: 100%;
@@ -1061,6 +1063,110 @@ textarea {
   background: color-mix(in srgb, var(--danger) 14%, var(--surface));
   color: var(--danger);
   font-size: 14px;
+}
+
+/* Confirmacao de que algo deu certo -- o teste do WhatsApp que saiu. Verde nao existe
+   na paleta; o dourado ja e a cor do que o manuscrito quer destacar. */
+.form-notice {
+  padding: 9px 11px;
+  border: 1px solid var(--gold);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--gold) 14%, var(--surface));
+  color: var(--text);
+  font-size: 14px;
+}
+
+/* ------------------------------------------------------------- lembretes */
+
+/* Cada aviso e uma ficha: a linha do quando em cima, a mensagem embaixo. */
+.reminder {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--bg) 12%, var(--surface));
+}
+
+.reminder__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Numero curto: o campo nao precisa de mais que tres digitos, e sem o limite ele
+   empurraria a unidade e a caixa de ativo para fora da linha. */
+.reminder__amount {
+  flex: 0 0 66px;
+}
+
+.reminder__head select {
+  flex: 0 1 148px;
+}
+
+.reminder__toggle {
+  white-space: nowrap;
+  font-size: 14px;
+}
+
+.reminder__message {
+  min-height: 44px;
+  font-size: 14px;
+}
+
+.reminder__add {
+  align-self: flex-start;
+}
+
+/* Os poucos links que saem do aplicativo -- hoje so a pagina do CallMeBot. Herdam a
+   rubrica para nao parecerem um enxerto de outra pagina. */
+a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* Um trecho de texto que age como botao, para a dica poder levar aos ajustes sem
+   virar um botao de verdade no meio da frase. */
+.link-button {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent);
+  font: inherit;
+  font-style: italic;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* Os passos para conseguir a apikey. O recuo cabe na largura do modal sem o
+   marcador escapar para fora da caixa. */
+/* O botao que acompanha um campo na mesma linha nao divide o espaco com ele: o campo
+   cresce, o botao fica do tamanho do proprio rotulo. */
+.field__row-action {
+  flex: 0 0 auto;
+  align-self: stretch;
+}
+
+.steps {
+  margin: 0;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 14px;
+}
+
+/* Trechos literais para copiar -- token, comando do bot. */
+code {
+  font-family: ui-monospace, 'Courier New', monospace;
+  font-size: 13px;
+  padding: 1px 4px;
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--bg) 30%, var(--surface-muted));
+  /* O numero e a frase do CallMeBot sao para copiar; quebrar e melhor que estourar. */
+  overflow-wrap: anywhere;
 }
 
 .scope-options {

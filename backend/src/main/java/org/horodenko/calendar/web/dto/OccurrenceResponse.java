@@ -1,6 +1,7 @@
 package org.horodenko.calendar.web.dto;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -22,6 +23,19 @@ public record OccurrenceResponse(
         String color,
         boolean recurring,
         boolean modified,
-        String recurrenceRule
+        String recurrenceRule,
+        /** Avisos da serie a que esta ocorrencia pertence. */
+        List<ReminderResponse> reminders
 ) {
+
+    /**
+     * A mesma ocorrencia com os avisos da serie anexados.
+     *
+     * <p>Os lembretes chegam depois porque sao buscados de uma vez so para todas as
+     * series da janela: buscar por ocorrencia daria uma consulta por linha da tela.
+     */
+    public OccurrenceResponse withReminders(List<ReminderResponse> reminders) {
+        return new OccurrenceResponse(seriesId, occurrenceStart, startAt, endAt, allDay, title,
+                description, location, color, recurring, modified, recurrenceRule, reminders);
+    }
 }

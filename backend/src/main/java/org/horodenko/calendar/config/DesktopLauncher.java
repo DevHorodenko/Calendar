@@ -36,7 +36,7 @@ import java.nio.file.Path;
  */
 @Component
 @Profile("desktop")
-public class DesktopLauncher {
+public class DesktopLauncher implements TrayNotifier {
 
     private static final Logger log = LoggerFactory.getLogger(DesktopLauncher.class);
 
@@ -183,6 +183,20 @@ public class DesktopLauncher {
                 "Na janela que abriu, clique no icone de instalar na barra de endereco "
                         + "(ou no menu ... > Aplicativos) e confirme o nome Calendario. "
                         + "Depois disso o icone do calendario aparece na barra de tarefas.");
+    }
+
+    /**
+     * Sem icone na bandeja nao ha onde pendurar o balao. Quem pergunta e o canal de
+     * notificacao, que prefere se declarar indisponivel a registrar falha por lembrete.
+     */
+    @Override
+    public boolean isAvailable() {
+        return trayIcon != null;
+    }
+
+    @Override
+    public void show(String title, String message) {
+        notifyTray(title, message);
     }
 
     private void notifyTray(String title, String message) {
